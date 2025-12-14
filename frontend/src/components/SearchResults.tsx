@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, ArrowLeft } from 'lucide-react';
@@ -11,8 +11,8 @@ import { motion } from 'framer-motion';
 export function SearchResults() {
   const { mood } = useParams();
   const navigate = useNavigate();
+
   const {
-    searchQuery,
     searchResults,
     moodBlocks,
     setSearchQuery,
@@ -20,69 +20,58 @@ export function SearchResults() {
     setCurrentSong,
     toggleLike,
   } = useMusicStore();
-  
-  const [localQuery, setLocalQuery] = useState(searchQuery);
 
-  // Get songs based on mood or search
+  const [localQuery, setLocalQuery] = useState('');
+
+  // ✅ Correct source of truth
   const displaySongs = mood
-    ? moodBlocks.find(b => b.mood === mood)?.songs || []
+    ? moodBlocks.find((b) => b.mood === mood)?.songs || []
     : searchResults;
 
   const title = mood
-    ? moodBlocks.find(b => b.mood === mood)?.title || 'Songs'
+    ? moodBlocks.find((b) => b.mood === mood)?.title || 'Songs'
     : 'Search Results';
 
-  useEffect(() => {
-    if (!mood && searchQuery) {
-      performSearch();
-    }
-  }, [mood, searchQuery, performSearch]);
-
-  const handleSearch = (value: string) => {
+  const handleSearch = async (value: string) => {
     setLocalQuery(value);
     setSearchQuery(value);
-    if (value.trim()) {
-      performSearch();
-    }
+
+    if (!value.trim()) return;
+    await performSearch();
   };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <StarField />
-      
+
       <div className="relative z-10 max-w-md mx-auto px-6 py-8">
-        {/* Header with Back Button */}
+        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate('/')}
             className="p-2 rounded-full glass-card hover:bg-violet-twilight/20 transition-colors"
           >
-            <ArrowLeft style={{ width: 24, height: 24 }} className="text-periwinkle" />
+            <ArrowLeft className="text-periwinkle w-6 h-6" />
           </button>
           <h1 className="heading-lg text-periwinkle">{title}</h1>
         </div>
 
-        {/* Search Bar (only for search mode) */}
+        {/* Search bar */}
         {!mood && (
           <motion.div
             className="relative mb-6"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="relative">
-              <Search
-                style={{ width: 20, height: 20 }}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lavender"
-              />
-              <Input
-                type="text"
-                placeholder="Search a song or artist…"
-                value={localQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="glass-card pl-12 pr-4 py-4 text-periwinkle placeholder:text-lavender/60 border-periwinkle/30 focus:border-violet-twilight body-md rounded-2xl"
-                autoFocus
-              />
-            </div>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-lavender w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Search a song or artist…"
+              value={localQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="glass-card pl-12 py-4 rounded-2xl"
+              autoFocus
+            />
           </motion.div>
         )}
 

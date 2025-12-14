@@ -8,17 +8,17 @@ export interface Song {
   title: string;
   artist: string;
   album: string;
-  duration: number; // in seconds
-  coverUrl: string;
+  cover: string;
+  audioUrl?: string | null;
+  duration?: number; // ms (Spotify)
   isLiked: boolean;
 }
 
+
 // Mood block data
 export interface MoodBlock {
-  id: string;
-  mood: MoodType;
+  mood: string;
   title: string;
-  description: string;
   songs: Song[];
 }
 

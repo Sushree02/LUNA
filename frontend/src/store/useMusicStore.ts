@@ -1,149 +1,136 @@
-import { create } from 'zustand';
-import type { Song, MoodBlock, Library } from '@/types';
-import { mockSongs, mockMoodBlocks, mockLibraries } from '@/data/mockData';
+import { create } from "zustand";
+import type { Song, MoodBlock, Library } from "@/types";
+import { searchSpotify } from "@/api/spotifyApi";
 
 interface MusicStore {
-  // Current playback state
+  // Playback
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
-  
-  // Library state
+
+  // Libraries (kept simple for now)
   libraries: Library[];
   currentLibrary: Library | null;
-  
-  // Search state
+
+  // Search
   searchQuery: string;
   searchResults: Song[];
-  
-  // Mood blocks
+
+  // Mood
   moodBlocks: MoodBlock[];
-  
-  // Loading state
+
+  // Loading
   isLoading: boolean;
-  
+
   // Actions
   setCurrentSong: (song: Song) => void;
   togglePlayPause: () => void;
   setProgress: (progress: number) => void;
   toggleLike: (songId: string) => void;
-  
-  // Library actions
-  createLibrary: (name: string) => void;
-  deleteLibrary: (libraryId: string) => void;
-  addSongToLibrary: (libraryId: string, song: Song) => void;
-  removeSongFromLibrary: (libraryId: string, songId: string) => void;
-  setCurrentLibrary: (library: Library | null) => void;
-  
-  // Search actions
+
   setSearchQuery: (query: string) => void;
-  performSearch: () => void;
-  
-  // Mood actions
-  loadMoodBlocks: () => void;
-  
-  // Loading actions
-  setIsLoading: (isLoading: boolean) => void;
+  performSearch: () => Promise<void>;
+
+  loadMoodBlocks: () => Promise<void>;
 }
 
-export const useMusicStore = create<MusicStore>((set) => ({
-  // Initial state
+export const useMusicStore = create<MusicStore>((set, get) => ({
+  // ───────────────── INITIAL STATE ─────────────────
   currentSong: null,
   isPlaying: false,
   progress: 0,
-  libraries: mockLibraries,
-  currentLibrary: mockLibraries[0],
-  searchQuery: '',
+
+  libraries: [],
+  currentLibrary: null,
+
+  searchQuery: "",
   searchResults: [],
-  moodBlocks: mockMoodBlocks,
+
+  moodBlocks: [],
   isLoading: true,
-  
-  // Playback actions
-  setCurrentSong: (song) => set({ currentSong: song, isPlaying: true, progress: 0 }),
-  
-  togglePlayPause: () => set((state) => ({ isPlaying: !state.isPlaying })),
-  
+
+  // ───────────────── PLAYBACK ─────────────────
+  setCurrentSong: (song) =>
+    set({ currentSong: song, isPlaying: true, progress: 0 }),
+
+  togglePlayPause: () =>
+    set((state) => ({ isPlaying: !state.isPlaying })),
+
   setProgress: (progress) => set({ progress }),
-  
-  toggleLike: (songId) => set((state) => {
-    // Update song in all places
-    const updateSong = (song: Song) => 
-      song.id === songId ? { ...song, isLiked: !song.isLiked } : song;
-    
+
+  toggleLike: (songId) =>
+  set((state) => {
+    const toggle = (song: Song) =>
+      song.id === songId
+        ? { ...song, isLiked: !song.isLiked }
+        : song;
+
     return {
-      currentSong: state.currentSong?.id === songId 
-        ? { ...state.currentSong, isLiked: !state.currentSong.isLiked }
-        : state.currentSong,
-      searchResults: state.searchResults.map(updateSong),
-      moodBlocks: state.moodBlocks.map(block => ({
+      currentSong:
+        state.currentSong?.id === songId
+          ? toggle(state.currentSong)
+          : state.currentSong,
+
+      searchResults: state.searchResults.map(toggle),
+
+      moodBlocks: state.moodBlocks.map((block) => ({
         ...block,
-        songs: block.songs.map(updateSong),
-      })),
-      libraries: state.libraries.map(lib => ({
-        ...lib,
-        songs: lib.songs.map(updateSong),
+        songs: block.songs.map(toggle),
       })),
     };
   }),
-  
-  // Library actions
-  createLibrary: (name) => set((state) => ({
-    libraries: [
-      ...state.libraries,
-      {
-        id: `library-${Date.now()}`,
-        name,
-        songs: [],
-        createdAt: new Date(),
-      },
-    ],
-  })),
-  
-  deleteLibrary: (libraryId) => set((state) => ({
-    libraries: state.libraries.filter(lib => lib.id !== libraryId),
-    currentLibrary: state.currentLibrary?.id === libraryId ? state.libraries[0] : state.currentLibrary,
-  })),
-  
-  addSongToLibrary: (libraryId, song) => set((state) => ({
-    libraries: state.libraries.map(lib =>
-      lib.id === libraryId
-        ? { ...lib, songs: [...lib.songs, song] }
-        : lib
-    ),
-  })),
-  
-  removeSongFromLibrary: (libraryId, songId) => set((state) => ({
-    libraries: state.libraries.map(lib =>
-      lib.id === libraryId
-        ? { ...lib, songs: lib.songs.filter(s => s.id !== songId) }
-        : lib
-    ),
-  })),
-  
-  setCurrentLibrary: (library) => set({ currentLibrary: library }),
-  
-  // Search actions
+
+
+  // ───────────────── SEARCH ─────────────────
   setSearchQuery: (query) => set({ searchQuery: query }),
-  
-  performSearch: () => set((state) => {
-    const query = state.searchQuery.toLowerCase();
+
+  performSearch: async () => {
+    const query = get().searchQuery.trim();
+
     if (!query) {
-      return { searchResults: [] };
+      set({ searchResults: [] });
+      return;
     }
-    
-    const results = mockSongs.filter(
-      song =>
-        song.title.toLowerCase().includes(query) ||
-        song.artist.toLowerCase().includes(query) ||
-        song.album.toLowerCase().includes(query)
+
+    try {
+      // backend already returns Song[]
+      const songs: Song[] = await searchSpotify(query);
+      set({ searchResults: songs });
+    } catch (error) {
+      console.error("❌ Search failed:", error);
+      set({ searchResults: [] });
+    }
+  },
+
+  /// -------------------- MOOD --------------------
+loadMoodBlocks: async () => {
+  try {
+    set({ isLoading: true });
+
+    const moods = ["chill", "happy", "sad", "focus"];
+
+    const moodBlocks: MoodBlock[] = await Promise.all(
+      moods.map(async (mood) => {
+        const res = await fetch(
+          `http://localhost:5000/api/spotify/mood/${mood}`
+        );
+
+        const songs: Song[] = await res.json();
+
+        return {
+          mood,
+          title: mood.toUpperCase(),
+          songs,
+        };
+      })
     );
-    
-    return { searchResults: results };
-  }),
-  
-  // Mood actions
-  loadMoodBlocks: () => set({ moodBlocks: mockMoodBlocks }),
-  
-  // Loading actions
-  setIsLoading: (isLoading) => set({ isLoading }),
+
+    set({ moodBlocks, isLoading: false });
+  } catch (error) {
+    console.error("Failed to load mood blocks", error);
+    set({ moodBlocks: [], isLoading: false });
+  }
+},
+
+
 }));
