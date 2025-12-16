@@ -6,4 +6,3 @@ export const searchSpotify = async (query: string) => {
   const res = await axios.get(`${API_BASE}/search?q=${query}`);
   return res.data;
 };
-

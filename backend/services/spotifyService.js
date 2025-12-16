@@ -52,7 +52,7 @@ export async function searchTracks(query) {
     title: t.name,
     artist: t.artists.map((a) => a.name).join(", "),
     album: t.album.name,
-    coverUrl: t.album.images[0]?.url || "",
+    cover: t.album.images[0]?.url || "",
     duration: Math.floor(t.duration_ms / 1000),
     isLiked: false,
   }));
@@ -86,7 +86,7 @@ export async function getMoodSongs(mood) {
     title: t.name,
     artist: t.artists.map((a) => a.name).join(", "),
     album: t.album.name,
-    coverUrl: t.album.images[0]?.url || "",
+    cover: t.album.images[0]?.url || "",
     duration: Math.floor(t.duration_ms / 1000),
     isLiked: false,
   }));
