@@ -5,14 +5,24 @@ export type ScreenType = "loading" | "home" | "search" | "player" | "library";
 // Song data
 export interface Song {
   id: string;
-  title: string;
-  artist: string;
-  album: string;
-  cover: string;
+
+  /* ===== Your existing fields (kept) ===== */
+  title?: string;
+  artist?: string;
+  album?: string;
+  cover?: string;
   audioUrl?: string | null;
-  duration?: number; // ms (Spotify)
-  isLiked: boolean;
+  duration?: number;
+  isLiked?: boolean;
+
+  /* ===== Spotify compatibility (added safely) ===== */
+  name?: string;
+  artists?: { name: string }[];
+  albumData?: {
+    images?: { url: string }[];
+  };
 }
+
 
 
 // Mood block data

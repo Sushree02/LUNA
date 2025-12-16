@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Plus, ArrowLeft } from 'lucide-react';
 import { SongRow } from './SongRow';
@@ -32,12 +38,16 @@ export function LibraryScreen() {
     }
   };
 
-  const displaySongs = currentLibrary?.songs || [];
+  /* ✅ ALWAYS derive songs from libraries (source of truth) */
+  const activeLibrary =
+    libraries.find((l) => l.id === currentLibrary?.id) ?? libraries[0];
+
+  const displaySongs = activeLibrary?.songs ?? [];
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <StarField />
-      
+
       <div className="relative z-10 max-w-md mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -46,7 +56,10 @@ export function LibraryScreen() {
               onClick={() => navigate('/')}
               className="p-2 rounded-full glass-card hover:bg-violet-twilight/20 transition-colors"
             >
-              <ArrowLeft style={{ width: 24, height: 24 }} className="text-periwinkle" />
+              <ArrowLeft
+                style={{ width: 24, height: 24 }}
+                className="text-periwinkle"
+              />
             </button>
             <h1 className="heading-lg text-periwinkle">Library</h1>
           </div>
@@ -58,12 +71,17 @@ export function LibraryScreen() {
                 size="icon"
                 className="rounded-full bg-gradient-to-br from-violet-twilight to-indigo-velvet hover:scale-110 transition-transform"
               >
-                <Plus style={{ width: 20, height: 20 }} className="text-periwinkle" />
+                <Plus
+                  style={{ width: 20, height: 20 }}
+                  className="text-periwinkle"
+                />
               </Button>
             </DialogTrigger>
             <DialogContent className="glass-card border-periwinkle/30">
               <DialogHeader>
-                <DialogTitle className="heading-md text-periwinkle">Create Library</DialogTitle>
+                <DialogTitle className="heading-md text-periwinkle">
+                  Create Library
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <Input
@@ -95,7 +113,7 @@ export function LibraryScreen() {
               key={library.id}
               onClick={() => setCurrentLibrary(library)}
               className={`px-4 py-2 rounded-full whitespace-nowrap body-md transition-all ${
-                currentLibrary?.id === library.id
+                activeLibrary?.id === library.id
                   ? 'bg-gradient-to-br from-violet-twilight to-indigo-velvet text-periwinkle glow-soft'
                   : 'glass-card text-lavender hover:bg-violet-twilight/20'
               }`}
@@ -123,7 +141,8 @@ export function LibraryScreen() {
                       setCurrentSong(song);
                       navigate('/player');
                     }}
-                    onLikeToggle={toggleLike}
+                    /* ✅ IMPORTANT: pass SONG, not id */
+                    onLikeToggle={() => toggleLike(song)}
                   />
                 </motion.div>
               ))
@@ -133,7 +152,9 @@ export function LibraryScreen() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <p className="body-lg text-lavender">No songs in this library yet</p>
+                <p className="body-lg text-lavender">
+                  No songs in this library yet
+                </p>
                 <p className="body-sm text-lavender/60 mt-2">
                   Like songs to add them to your favorites
                 </p>

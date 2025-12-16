@@ -42,7 +42,6 @@ export function PlayerScreen() {
     navigate('/');
     return null;
   }
-  console.log("COVER VALUE 👉", currentSong.cover);
 
   const currentTime = Math.floor(
     (localProgress / 100) * (currentSong.duration || 0)
@@ -77,10 +76,7 @@ export function PlayerScreen() {
           transition={{ duration: 0.5 }}
         >
           <Avatar className="w-64 h-64 rounded-3xl glow-soft">
-            <AvatarImage
-              src={currentSong.cover}
-              alt={currentSong.title}
-            />
+            <AvatarImage src={currentSong.cover} alt={currentSong.title} />
             <AvatarFallback className="bg-indigo-velvet rounded-3xl">
               <Music className="w-20 h-20 text-periwinkle" />
             </AvatarFallback>
@@ -115,9 +111,9 @@ export function PlayerScreen() {
 
           {/* Controls */}
           <div className="flex items-center justify-center gap-8">
-            {/* Like */}
+            {/* ❤️ LIKE (FIXED) */}
             <motion.button
-              onClick={() => toggleLike(currentSong.id)}
+              onClick={() => toggleLike(currentSong)}
               className="p-3 rounded-full hover:bg-soft-pink/20 transition-colors"
               whileTap={{ scale: 0.9 }}
             >
