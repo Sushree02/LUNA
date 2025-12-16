@@ -38,7 +38,7 @@ export function LibraryScreen() {
     }
   };
 
-  /* ✅ ALWAYS derive songs from libraries (source of truth) */
+  /* ✅ Source of truth for active library */
   const activeLibrary =
     libraries.find((l) => l.id === currentLibrary?.id) ?? libraries[0];
 
@@ -56,33 +56,29 @@ export function LibraryScreen() {
               onClick={() => navigate('/')}
               className="p-2 rounded-full glass-card hover:bg-violet-twilight/20 transition-colors"
             >
-              <ArrowLeft
-                style={{ width: 24, height: 24 }}
-                className="text-periwinkle"
-              />
+              <ArrowLeft className="w-6 h-6 text-periwinkle" />
             </button>
             <h1 className="heading-lg text-periwinkle">Library</h1>
           </div>
 
-          {/* Create Library Button */}
+          {/* Create Library */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 size="icon"
                 className="rounded-full bg-gradient-to-br from-violet-twilight to-indigo-velvet hover:scale-110 transition-transform"
               >
-                <Plus
-                  style={{ width: 20, height: 20 }}
-                  className="text-periwinkle"
-                />
+                <Plus className="w-5 h-5 text-periwinkle" />
               </Button>
             </DialogTrigger>
+
             <DialogContent className="glass-card border-periwinkle/30">
               <DialogHeader>
                 <DialogTitle className="heading-md text-periwinkle">
                   Create Library
                 </DialogTitle>
               </DialogHeader>
+
               <div className="space-y-4 mt-4">
                 <Input
                   placeholder="Library name"
@@ -90,9 +86,7 @@ export function LibraryScreen() {
                   onChange={(e) => setNewLibraryName(e.target.value)}
                   className="glass-card text-periwinkle placeholder:text-lavender/60 border-periwinkle/30"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreateLibrary();
-                    }
+                    if (e.key === 'Enter') handleCreateLibrary();
                   }}
                 />
                 <Button
@@ -124,7 +118,7 @@ export function LibraryScreen() {
           ))}
         </div>
 
-        {/* Songs List */}
+        {/* Songs */}
         <ScrollArea className="h-[calc(100vh-250px)]">
           <div className="space-y-3 pr-4">
             {displaySongs.length > 0 ? (
@@ -137,11 +131,11 @@ export function LibraryScreen() {
                 >
                   <SongRow
                     song={song}
-                    onSelect={(song) => {
-                      setCurrentSong(song);
+                    onSelect={() => {
+                      /* ✅ THIS IS THE CRITICAL FIX */
+                      setCurrentSong(song, displaySongs, index);
                       navigate('/player');
                     }}
-                    /* ✅ IMPORTANT: pass SONG, not id */
                     onLikeToggle={() => toggleLike(song)}
                   />
                 </motion.div>

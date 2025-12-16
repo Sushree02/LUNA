@@ -7,6 +7,10 @@ interface MusicStore {
   isPlaying: boolean;
   progress: number;
 
+  // ✅ NEW (required for next/prev)
+  queue: Song[];
+  currentIndex: number;
+
   libraries: Library[];
   currentLibrary: Library | null;
 
@@ -16,10 +20,13 @@ interface MusicStore {
   moodBlocks: MoodBlock[];
   isLoading: boolean;
 
-  setCurrentSong: (song: Song) => void;
+  setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
   togglePlayPause: () => void;
   setProgress: (progress: number) => void;
   toggleLike: (song: Song) => void;
+
+  playNext: () => void;
+  playPrevious: () => void;
 
   setCurrentLibrary: (library: Library) => void;
   createLibrary: (name: string) => void;
@@ -29,7 +36,7 @@ interface MusicStore {
   loadMoodBlocks: () => Promise<void>;
 }
 
-/* 🔑 helper: normalize any song to APP format */
+/* 🔑 Normalize song safely */
 const normalizeSong = (song: Song): Song => ({
   id: song.id,
   title: song.title ?? song.name ?? "Unknown title",
@@ -37,10 +44,7 @@ const normalizeSong = (song: Song): Song => ({
     song.artist ??
     song.artists?.map((a) => a.name).join(", ") ??
     "Unknown artist",
-  cover:
-    song.cover ??
-    song.albumData?.images?.[0]?.url ??
-    "",
+  cover: song.cover ?? song.albumData?.images?.[0]?.url ?? "",
   audioUrl: song.audioUrl ?? null,
   duration: song.duration,
   isLiked: true,
@@ -61,6 +65,10 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     isPlaying: false,
     progress: 0,
 
+    // ✅ NEW
+    queue: [],
+    currentIndex: 0,
+
     libraries: [favoritesLibrary],
     currentLibrary: favoritesLibrary,
 
@@ -72,9 +80,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     /* ================= PLAYER ================= */
 
-    setCurrentSong: (song) =>
+    setCurrentSong: (song, queue = [song], index = 0) =>
       set({
         currentSong: song,
+        queue,
+        currentIndex: index,
         isPlaying: true,
         progress: 0,
       }),
@@ -83,6 +93,42 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       set((state) => ({ isPlaying: !state.isPlaying })),
 
     setProgress: (progress) => set({ progress }),
+
+    /* ================= NEXT / PREVIOUS ================= */
+
+    playNext: () =>
+      set((state) => {
+        if (state.queue.length === 0) return state;
+
+        const nextIndex =
+          state.currentIndex + 1 < state.queue.length
+            ? state.currentIndex + 1
+            : 0;
+
+        return {
+          currentIndex: nextIndex,
+          currentSong: state.queue[nextIndex],
+          isPlaying: true,
+          progress: 0,
+        };
+      }),
+
+    playPrevious: () =>
+      set((state) => {
+        if (state.queue.length === 0) return state;
+
+        const prevIndex =
+          state.currentIndex > 0
+            ? state.currentIndex - 1
+            : state.queue.length - 1;
+
+        return {
+          currentIndex: prevIndex,
+          currentSong: state.queue[prevIndex],
+          isPlaying: true,
+          progress: 0,
+        };
+      }),
 
     /* ================= LIBRARIES ================= */
 
@@ -124,34 +170,15 @@ export const useMusicStore = create<MusicStore>((set, get) => {
             songs: block.songs.map(toggle),
           })),
 
-          libraries: state.libraries.map((lib) => {
-            if (lib.id !== "favorites") return lib;
-
-            if (willLike) {
-              if (lib.songs.some((s) => s.id === song.id)) return lib;
-              return {
-                ...lib,
-                songs: [...lib.songs, normalized],
-              };
-            }
-
-            return {
-              ...lib,
-              songs: lib.songs.filter((s) => s.id !== song.id),
-            };
-          }),
-
-          currentLibrary:
-            state.currentLibrary?.id === "favorites"
-              ? {
-                  ...state.currentLibrary,
-                  songs: willLike
-                    ? [...state.currentLibrary.songs, normalized]
-                    : state.currentLibrary.songs.filter(
-                        (s) => s.id !== song.id
-                      ),
-                }
-              : state.currentLibrary,
+          libraries: state.libraries.map((lib) =>
+            lib.id !== "favorites"
+              ? lib
+              : willLike
+              ? lib.songs.some((s) => s.id === song.id)
+                ? lib
+                : { ...lib, songs: [...lib.songs, normalized] }
+              : { ...lib, songs: lib.songs.filter((s) => s.id !== song.id) }
+          ),
         };
       }),
 
