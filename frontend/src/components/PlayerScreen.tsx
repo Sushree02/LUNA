@@ -25,10 +25,10 @@ export function PlayerScreen() {
   }, [progress]);
 
   useEffect(() => {
-    if (isPlaying && currentSong) {
+    if (isPlaying && currentSong && currentSong.duration) {
       const interval = setInterval(() => {
         setLocalProgress((prev) => {
-          const newProgress = prev + (100 / currentSong.duration);
+          const newProgress = prev + (100 / (currentSong.duration || 1));
           if (newProgress >= 100) {
             return 0;
           }
@@ -45,14 +45,14 @@ export function PlayerScreen() {
     return null;
   }
 
-  const currentTime = Math.floor((localProgress / 100) * currentSong.duration);
+  const currentTime = Math.floor((localProgress / 100) * (currentSong.duration || 0));
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Blurred Background */}
       <div
         className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30"
-        style={{ backgroundImage: `url(${currentSong.coverUrl})` }}
+        style={{ backgroundImage: `url(${currentSong.cover})` }}
       />
       
       <StarField />
@@ -77,7 +77,7 @@ export function PlayerScreen() {
         >
           <div className="relative">
             <Avatar className="w-64 h-64 rounded-3xl glow-soft">
-              <AvatarImage src={currentSong.coverUrl} alt={currentSong.album} />
+              <AvatarImage src={currentSong.cover} alt={currentSong.album} />
               <AvatarFallback className="bg-indigo-velvet rounded-3xl">
                 <Music style={{ width: 80, height: 80 }} className="text-periwinkle" />
               </AvatarFallback>
@@ -103,7 +103,7 @@ export function PlayerScreen() {
             <Progress value={localProgress} className="h-2 mb-2" />
             <div className="flex justify-between body-sm text-lavender">
               <span>{formatDuration(currentTime)}</span>
-              <span>{formatDuration(currentSong.duration)}</span>
+              <span>{formatDuration(currentSong.duration || 0)}</span>
             </div>
           </div>
 

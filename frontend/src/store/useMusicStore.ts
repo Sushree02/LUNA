@@ -3,53 +3,53 @@ import type { Song, MoodBlock, Library } from "@/types";
 import { searchSpotify } from "@/api/spotifyApi";
 
 interface MusicStore {
-  // Playback
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
 
-  // Libraries (kept simple for now)
   libraries: Library[];
   currentLibrary: Library | null;
 
-  // Search
   searchQuery: string;
   searchResults: Song[];
 
-  // Mood
   moodBlocks: MoodBlock[];
-
-  // Loading
   isLoading: boolean;
 
-  // Actions
   setCurrentSong: (song: Song) => void;
   togglePlayPause: () => void;
   setProgress: (progress: number) => void;
   toggleLike: (songId: string) => void;
 
+  setCurrentLibrary: (library: Library) => void;
+  createLibrary: (name: string) => void;
+
   setSearchQuery: (query: string) => void;
   performSearch: () => Promise<void>;
-
   loadMoodBlocks: () => Promise<void>;
 }
 
 export const useMusicStore = create<MusicStore>((set, get) => ({
-  // ───────────────── INITIAL STATE ─────────────────
   currentSong: null,
   isPlaying: false,
   progress: 0,
 
-  libraries: [],
+  libraries: [
+    {
+      id: "favorites",
+      name: "Favorites",
+      songs: [],
+      createdAt: new Date()
+    },
+  ],
   currentLibrary: null,
 
   searchQuery: "",
   searchResults: [],
 
   moodBlocks: [],
-  isLoading: true,
+  isLoading: false,
 
-  // ───────────────── PLAYBACK ─────────────────
   setCurrentSong: (song) =>
     set({ currentSong: song, isPlaying: true, progress: 0 }),
 
@@ -58,79 +58,80 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
 
   setProgress: (progress) => set({ progress }),
 
+  setCurrentLibrary: (library) => set({ currentLibrary: library }),
+
+  createLibrary: (name) =>
+    set((state) => ({
+      libraries: [
+        ...state.libraries,
+        {
+          id: crypto.randomUUID(),
+          name,
+          songs: [],
+          createdAt: new Date(),
+        },
+      ],
+    })),
+
   toggleLike: (songId) =>
-  set((state) => {
-    const toggle = (song: Song) =>
-      song.id === songId
-        ? { ...song, isLiked: !song.isLiked }
-        : song;
+    set((state) => {
+      const toggle = (song: Song) =>
+        song.id === songId
+          ? { ...song, isLiked: !song.isLiked }
+          : song;
 
-    return {
-      currentSong:
-        state.currentSong?.id === songId
-          ? toggle(state.currentSong)
-          : state.currentSong,
+      return {
+        currentSong:
+          state.currentSong?.id === songId
+            ? toggle(state.currentSong)
+            : state.currentSong,
 
-      searchResults: state.searchResults.map(toggle),
+        searchResults: state.searchResults.map(toggle),
 
-      moodBlocks: state.moodBlocks.map((block) => ({
-        ...block,
-        songs: block.songs.map(toggle),
-      })),
-    };
-  }),
+        moodBlocks: state.moodBlocks.map((block) => ({
+          ...block,
+          songs: block.songs.map(toggle),
+        })),
 
+        libraries: state.libraries.map((lib) => ({
+          ...lib,
+          songs: lib.songs.map(toggle),
+        })),
+      };
+    }),
 
-  // ───────────────── SEARCH ─────────────────
   setSearchQuery: (query) => set({ searchQuery: query }),
 
   performSearch: async () => {
     const query = get().searchQuery.trim();
-
-    if (!query) {
-      set({ searchResults: [] });
-      return;
-    }
+    if (!query) return set({ searchResults: [] });
 
     try {
-      // backend already returns Song[]
-      const songs: Song[] = await searchSpotify(query);
+      const songs = await searchSpotify(query);
       set({ searchResults: songs });
-    } catch (error) {
-      console.error("❌ Search failed:", error);
+    } catch {
       set({ searchResults: [] });
     }
   },
 
-  /// -------------------- MOOD --------------------
-loadMoodBlocks: async () => {
-  try {
-    set({ isLoading: true });
+  loadMoodBlocks: async () => {
+    try {
+      set({ isLoading: true });
+      const moods = ["chill", "happy", "sad", "focus"];
 
-    const moods = ["chill", "happy", "sad", "focus"];
+      const moodBlocks = await Promise.all(
+        moods.map(async (mood) => {
+          const res = await fetch(
+            `http://localhost:5000/api/spotify/mood/${mood}`
+          );
+          const songs = await res.json();
+          return { mood, title: mood.toUpperCase(), songs };
+        })
+      );
 
-    const moodBlocks: MoodBlock[] = await Promise.all(
-      moods.map(async (mood) => {
-        const res = await fetch(
-          `http://localhost:5000/api/spotify/mood/${mood}`
-        );
-
-        const songs: Song[] = await res.json();
-
-        return {
-          mood,
-          title: mood.toUpperCase(),
-          songs,
-        };
-      })
-    );
-
-    set({ moodBlocks, isLoading: false });
-  } catch (error) {
-    console.error("Failed to load mood blocks", error);
-    set({ moodBlocks: [], isLoading: false });
-  }
-},
-
-
+      set({ moodBlocks, isLoading: false });
+    } catch {
+      set({ moodBlocks: [], isLoading: false });
+    }
+  },
 }));
