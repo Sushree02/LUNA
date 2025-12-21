@@ -7,7 +7,6 @@ interface MusicStore {
   isPlaying: boolean;
   progress: number;
 
-  // ✅ NEW (required for next/prev)
   queue: Song[];
   currentIndex: number;
 
@@ -21,22 +20,19 @@ interface MusicStore {
   isLoading: boolean;
 
   setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
-  togglePlayPause: () => void;
   setProgress: (progress: number) => void;
-  toggleLike: (song: Song) => void;
 
   playNext: () => void;
   playPrevious: () => void;
 
-  setCurrentLibrary: (library: Library) => void;
-  createLibrary: (name: string) => void;
+  toggleLike: (song: Song) => void;
 
   setSearchQuery: (query: string) => void;
   performSearch: () => Promise<void>;
   loadMoodBlocks: () => Promise<void>;
 }
 
-/* 🔑 Normalize song safely */
+/* 🔑 Normalize song */
 const normalizeSong = (song: Song): Song => ({
   id: song.id,
   title: song.title ?? song.name ?? "Unknown title",
@@ -45,12 +41,12 @@ const normalizeSong = (song: Song): Song => ({
     song.artists?.map((a) => a.name).join(", ") ??
     "Unknown artist",
   cover: song.cover ?? song.albumData?.images?.[0]?.url ?? "",
-  audioUrl: song.audioUrl ?? null,
-  duration: song.duration,
+  duration: song.duration ?? 0,
   isLiked: true,
 });
 
-export const useMusicStore = create<MusicStore>((set, get) => {
+/* ✅ CREATE STORE */
+export const musicStore = create<MusicStore>((set, get) => {
   const favoritesLibrary: Library = {
     id: "favorites",
     name: "Favorites",
@@ -65,7 +61,6 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     isPlaying: false,
     progress: 0,
 
-    // ✅ NEW
     queue: [],
     currentIndex: 0,
 
@@ -85,12 +80,8 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         currentSong: song,
         queue,
         currentIndex: index,
-        isPlaying: true,
         progress: 0,
       }),
-
-    togglePlayPause: () =>
-      set((state) => ({ isPlaying: !state.isPlaying })),
 
     setProgress: (progress) => set({ progress }),
 
@@ -98,7 +89,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     playNext: () =>
       set((state) => {
-        if (state.queue.length === 0) return state;
+        if (!state.queue.length) return state;
 
         const nextIndex =
           state.currentIndex + 1 < state.queue.length
@@ -108,14 +99,13 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         return {
           currentIndex: nextIndex,
           currentSong: state.queue[nextIndex],
-          isPlaying: true,
           progress: 0,
         };
       }),
 
     playPrevious: () =>
       set((state) => {
-        if (state.queue.length === 0) return state;
+        if (!state.queue.length) return state;
 
         const prevIndex =
           state.currentIndex > 0
@@ -125,29 +115,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         return {
           currentIndex: prevIndex,
           currentSong: state.queue[prevIndex],
-          isPlaying: true,
           progress: 0,
         };
       }),
 
-    /* ================= LIBRARIES ================= */
-
-    setCurrentLibrary: (library) => set({ currentLibrary: library }),
-
-    createLibrary: (name) =>
-      set((state) => ({
-        libraries: [
-          ...state.libraries,
-          {
-            id: crypto.randomUUID(),
-            name,
-            songs: [],
-            createdAt: new Date(),
-          },
-        ],
-      })),
-
-    /* ================= LIKE / FAVORITES ================= */
+    /* ================= LIKE ================= */
 
     toggleLike: (song) =>
       set((state) => {
@@ -177,7 +149,10 @@ export const useMusicStore = create<MusicStore>((set, get) => {
               ? lib.songs.some((s) => s.id === song.id)
                 ? lib
                 : { ...lib, songs: [...lib.songs, normalized] }
-              : { ...lib, songs: lib.songs.filter((s) => s.id !== song.id) }
+              : {
+                  ...lib,
+                  songs: lib.songs.filter((s) => s.id !== song.id),
+                }
           ),
         };
       }),
@@ -188,7 +163,10 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     performSearch: async () => {
       const query = get().searchQuery.trim();
-      if (!query) return set({ searchResults: [] });
+      if (!query) {
+        set({ searchResults: [] });
+        return;
+      }
 
       try {
         const songs = await searchSpotify(query);
@@ -203,6 +181,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     loadMoodBlocks: async () => {
       try {
         set({ isLoading: true });
+
         const moods = ["chill", "happy", "sad", "focus"];
 
         const moodBlocks = await Promise.all(
@@ -222,3 +201,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     },
   };
 });
+
+/* ✅ EXPORT HOOK */
+export const useMusicStore = musicStore;
+
+/* 🔥 EXPOSE STORE INSTANCE (CRITICAL) */
+if (typeof window !== "undefined") {
+  (window as any).__musicStore = musicStore;
+}

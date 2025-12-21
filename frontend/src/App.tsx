@@ -6,6 +6,7 @@ import { SearchResults } from './components/SearchResults';
 import { PlayerScreen } from './components/PlayerScreen';
 import { LibraryScreen } from './components/LibraryScreen';
 import { BottomNav } from './components/BottomNav';
+import { YouTubePlayer } from './components/YouTubePlayer';
 import { useMusicStore } from './store/useMusicStore';
 
 function App() {
@@ -22,6 +23,9 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* 🔥 YouTube audio engine (MOUNT ONCE) */}
+      <YouTubePlayer />
+
       <div className="pb-24">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -30,6 +34,7 @@ function App() {
           <Route path="/player" element={<PlayerScreen />} />
           <Route path="/library" element={<LibraryScreen />} />
         </Routes>
+
         <BottomNav />
       </div>
     </BrowserRouter>
