@@ -8,6 +8,7 @@ import { useMusicStore } from "@/store/useMusicStore";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Song } from "@/types";
+import { searchYouTubeVideo } from "@/api/youtubeSearch";
 
 export function SearchResults() {
   const { mood } = useParams();
@@ -24,6 +25,7 @@ export function SearchResults() {
 
   const [localQuery, setLocalQuery] = useState("");
 
+  /* 🎵 Songs to show */
   const displaySongs: Song[] = mood
     ? moodBlocks.find((b) => b.mood === mood)?.songs || []
     : searchResults;
@@ -39,32 +41,41 @@ export function SearchResults() {
     await performSearch();
   };
 
-  /* 🔥 USER CLICK → START AUDIO HERE (MANDATORY) */
-  const handleSongClick = (song: Song, index: number) => {
-    // 1️⃣ Update Zustand (source of truth)
+  /* 🔥 SPOTUBE-STYLE CLICK HANDLER */
+  const handleSongClick = async (song: Song, index: number) => {
+    // 1️⃣ Update Zustand (queue + current song)
     setCurrentSong(song, displaySongs, index);
 
-    // 2️⃣ START YOUTUBE AUDIO (USER GESTURE)
-    if (window.player && window.playerReady) {
-      const title = song.title ?? song.name ?? "";
-      const artist =
-        song.artist ??
-        song.artists?.map((a) => a.name).join(" ") ??
-        "";
+    // 2️⃣ Ensure YouTube player exists
+    if (!window.player || !window.playerReady) return;
 
-      const query = `${title} ${artist}`.trim();
+    // 3️⃣ Normalize title
+    const songTitle = song.title ?? song.name ?? "";
 
-      window.player.loadPlaylist({
-        listType: "search",
-        list: query,
-        index: 0,
-      });
-
-      // 🔥 THIS LINE IS WHY SOUND WORKS
-      window.player.playVideo();
+    // 4️⃣ Normalize artist SAFELY (THIS FIXES YOUR ERROR)
+    let artist = "";
+    if (typeof song.artist === "string") {
+      artist = song.artist;
+    } else if (Array.isArray(song.artists)) {
+      artist = song.artists.map((a) => a.name).join(" ");
     }
 
-    // 3️⃣ Navigate AFTER playback starts
+    // 5️⃣ ONE string ONLY (TypeScript-safe ✅)
+    const query = `${songTitle} ${artist}`.trim();
+
+    // 6️⃣ Find exact YouTube video
+    const videoId = await searchYouTubeVideo(query);
+
+    if (!videoId) {
+      console.warn("❌ No matching YouTube video found");
+      return;
+    }
+
+    // 7️⃣ Play exact video (user gesture ✅)
+    window.player.loadVideoById(videoId);
+    window.player.playVideo();
+
+    // 8️⃣ Open Player screen
     navigate("/player");
   };
 
@@ -84,7 +95,7 @@ export function SearchResults() {
           <h1 className="heading-lg text-periwinkle">{title}</h1>
         </div>
 
-        {/* Search */}
+        {/* Search box */}
         {!mood && (
           <div className="relative mb-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-lavender" />
@@ -97,7 +108,7 @@ export function SearchResults() {
           </div>
         )}
 
-        {/* Songs */}
+        {/* Song list */}
         <ScrollArea className="h-[calc(100vh-200px)]">
           <div className="space-y-3 pr-4">
             {displaySongs.length > 0 ? (
@@ -111,9 +122,7 @@ export function SearchResults() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-center text-lavender">
-                No results found
-              </p>
+              <p className="text-center text-lavender">No results found</p>
             )}
           </div>
         </ScrollArea>
