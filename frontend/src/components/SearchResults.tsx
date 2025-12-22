@@ -21,11 +21,12 @@ export function SearchResults() {
     performSearch,
     setCurrentSong,
     toggleLike,
+    setSongVideoId, // ✅ exists in store
   } = useMusicStore();
 
   const [localQuery, setLocalQuery] = useState("");
 
-  /* 🎵 Songs to show */
+  /* 🎵 Songs to display */
   const displaySongs: Song[] = mood
     ? moodBlocks.find((b) => b.mood === mood)?.songs || []
     : searchResults;
@@ -43,16 +44,15 @@ export function SearchResults() {
 
   /* 🔥 SPOTUBE-STYLE CLICK HANDLER */
   const handleSongClick = async (song: Song, index: number) => {
-    // 1️⃣ Update Zustand (queue + current song)
+    // 1️⃣ Update queue
     setCurrentSong(song, displaySongs, index);
 
-    // 2️⃣ Ensure YouTube player exists
     if (!window.player || !window.playerReady) return;
 
-    // 3️⃣ Normalize title
+    // 2️⃣ Normalize title
     const songTitle = song.title ?? song.name ?? "";
 
-    // 4️⃣ Normalize artist SAFELY (THIS FIXES YOUR ERROR)
+    // 3️⃣ Normalize artist
     let artist = "";
     if (typeof song.artist === "string") {
       artist = song.artist;
@@ -60,22 +60,29 @@ export function SearchResults() {
       artist = song.artists.map((a) => a.name).join(" ");
     }
 
-    // 5️⃣ ONE string ONLY (TypeScript-safe ✅)
     const query = `${songTitle} ${artist}`.trim();
 
-    // 6️⃣ Find exact YouTube video
-    const videoId = await searchYouTubeVideo(query);
+    // 🔑 CACHE = song.videoId (THIS MATCHES YOUR STORE)
+    let videoId: string | null = song.videoId ?? null;
 
+    // 4️⃣ Search YouTube ONLY if not cached
     if (!videoId) {
-      console.warn("❌ No matching YouTube video found");
-      return;
+      videoId = await searchYouTubeVideo(query);
+
+      if (!videoId) {
+        console.warn("❌ No matching YouTube video found");
+        return;
+      }
+
+      // cache it in Zustand
+      setSongVideoId(song.id!, videoId);
     }
 
-    // 7️⃣ Play exact video (user gesture ✅)
+    // 5️⃣ Play exact video
     window.player.loadVideoById(videoId);
     window.player.playVideo();
 
-    // 8️⃣ Open Player screen
+    // 6️⃣ Open player
     navigate("/player");
   };
 
@@ -95,7 +102,7 @@ export function SearchResults() {
           <h1 className="heading-lg text-periwinkle">{title}</h1>
         </div>
 
-        {/* Search box */}
+        {/* Search */}
         {!mood && (
           <div className="relative mb-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-lavender" />
@@ -108,12 +115,12 @@ export function SearchResults() {
           </div>
         )}
 
-        {/* Song list */}
+        {/* Songs */}
         <ScrollArea className="h-[calc(100vh-200px)]">
           <div className="space-y-3 pr-4">
             {displaySongs.length > 0 ? (
               displaySongs.map((song, index) => (
-                <motion.div key={song.id ?? `${song.title}-${index}`}>
+                <motion.div key={song.id}>
                   <SongRow
                     song={song}
                     onSelect={() => handleSongClick(song, index)}
@@ -122,7 +129,9 @@ export function SearchResults() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-center text-lavender">No results found</p>
+              <p className="text-center text-lavender">
+                No results found
+              </p>
             )}
           </div>
         </ScrollArea>

@@ -2,6 +2,8 @@ import { create } from "zustand";
 import type { Song, MoodBlock, Library } from "@/types";
 import { searchSpotify } from "@/api/spotifyApi";
 
+/* ================= TYPES ================= */
+
 interface MusicStore {
   currentSong: Song | null;
   isPlaying: boolean;
@@ -9,6 +11,10 @@ interface MusicStore {
 
   queue: Song[];
   currentIndex: number;
+
+  /* 🔥 YOUTUBE CACHE */
+  songVideoIds: Record<string, string>;
+  setSongVideoId: (songId: string, videoId: string) => void;
 
   libraries: Library[];
   currentLibrary: Library | null;
@@ -19,34 +25,41 @@ interface MusicStore {
   moodBlocks: MoodBlock[];
   isLoading: boolean;
 
+  /* PLAYER */
   setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
   setProgress: (progress: number) => void;
-
   playNext: () => void;
   playPrevious: () => void;
 
+  /* LIKE */
   toggleLike: (song: Song) => void;
 
+  /* SEARCH */
   setSearchQuery: (query: string) => void;
   performSearch: () => Promise<void>;
+
+  /* MOODS */
   loadMoodBlocks: () => Promise<void>;
 }
 
-/* 🔑 Normalize song */
+/* ================= HELPERS ================= */
+
 const normalizeSong = (song: Song): Song => ({
-  id: song.id,
+  ...song,
+  id: song.id ?? crypto.randomUUID(),
   title: song.title ?? song.name ?? "Unknown title",
   artist:
-    song.artist ??
-    song.artists?.map((a) => a.name).join(", ") ??
-    "Unknown artist",
+    typeof song.artist === "string"
+      ? song.artist
+      : song.artists?.map((a) => a.name).join(", ") ?? "Unknown artist",
   cover: song.cover ?? song.albumData?.images?.[0]?.url ?? "",
   duration: song.duration ?? 0,
-  isLiked: true,
+  isLiked: song.isLiked ?? false,
 });
 
-/* ✅ CREATE STORE */
-export const musicStore = create<MusicStore>((set, get) => {
+/* ================= STORE ================= */
+
+export const useMusicStore = create<MusicStore>((set, get) => {
   const favoritesLibrary: Library = {
     id: "favorites",
     name: "Favorites",
@@ -55,7 +68,7 @@ export const musicStore = create<MusicStore>((set, get) => {
   };
 
   return {
-    /* ================= STATE ================= */
+    /* ===== STATE ===== */
 
     currentSong: null,
     isPlaying: false,
@@ -63,6 +76,9 @@ export const musicStore = create<MusicStore>((set, get) => {
 
     queue: [],
     currentIndex: 0,
+
+    /* 🔥 CACHE INIT */
+    songVideoIds: {},
 
     libraries: [favoritesLibrary],
     currentLibrary: favoritesLibrary,
@@ -73,7 +89,7 @@ export const musicStore = create<MusicStore>((set, get) => {
     moodBlocks: [],
     isLoading: false,
 
-    /* ================= PLAYER ================= */
+    /* ===== PLAYER ===== */
 
     setCurrentSong: (song, queue = [song], index = 0) =>
       set({
@@ -81,11 +97,10 @@ export const musicStore = create<MusicStore>((set, get) => {
         queue,
         currentIndex: index,
         progress: 0,
+        isPlaying: true,
       }),
 
     setProgress: (progress) => set({ progress }),
-
-    /* ================= NEXT / PREVIOUS ================= */
 
     playNext: () =>
       set((state) => {
@@ -119,7 +134,17 @@ export const musicStore = create<MusicStore>((set, get) => {
         };
       }),
 
-    /* ================= LIKE ================= */
+    /* ===== 🔥 YOUTUBE CACHE ===== */
+
+    setSongVideoId: (songId, videoId) =>
+      set((state) => ({
+        songVideoIds: {
+          ...state.songVideoIds,
+          [songId]: videoId,
+        },
+      })),
+
+    /* ===== LIKE ===== */
 
     toggleLike: (song) =>
       set((state) => {
@@ -157,7 +182,7 @@ export const musicStore = create<MusicStore>((set, get) => {
         };
       }),
 
-    /* ================= SEARCH ================= */
+    /* ===== SEARCH ===== */
 
     setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -176,7 +201,7 @@ export const musicStore = create<MusicStore>((set, get) => {
       }
     },
 
-    /* ================= MOODS ================= */
+    /* ===== MOODS ===== */
 
     loadMoodBlocks: async () => {
       try {
@@ -201,11 +226,3 @@ export const musicStore = create<MusicStore>((set, get) => {
     },
   };
 });
-
-/* ✅ EXPORT HOOK */
-export const useMusicStore = musicStore;
-
-/* 🔥 EXPOSE STORE INSTANCE (CRITICAL) */
-if (typeof window !== "undefined") {
-  (window as any).__musicStore = musicStore;
-}

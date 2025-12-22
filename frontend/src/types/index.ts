@@ -14,6 +14,7 @@ export interface Song {
   audioUrl?: string | null;
   duration?: number;
   isLiked?: boolean;
+  videoId?: string;
 
   /* ===== Spotify compatibility (added safely) ===== */
   name?: string;
