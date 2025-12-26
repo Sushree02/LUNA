@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Play,
   Pause,
@@ -21,15 +21,18 @@ export function PlayerScreen() {
 
   const {
     currentSong,
+    toggleLike,
     playNext,
     playPrevious,
-    toggleLike,
     songVideoIds,
     setSongVideoId,
   } = useMusicStore();
 
   const [progress, setProgress] = useState(0);
   const [ytState, setYtState] = useState<number>(-1);
+
+  // 🔒 Prevent autoplay firing multiple times
+  const autoplayLock = useRef(false);
 
   /* 🚫 No song → go back */
   useEffect(() => {
@@ -41,20 +44,20 @@ export function PlayerScreen() {
     if (!currentSong || !window.player || !window.playerReady) return;
 
     const playSong = async () => {
-      const songTitle = currentSong.title ?? currentSong.name ?? "";
+      const title = currentSong.title ?? currentSong.name ?? "";
       const artist =
         typeof currentSong.artist === "string"
           ? currentSong.artist
           : currentSong.artists?.map((a) => a.name).join(" ") ?? "";
 
-      const query = `${songTitle} ${artist}`.trim();
+      const query = `${title} ${artist}`.trim();
 
       let videoId = songVideoIds[currentSong.id!];
 
       if (!videoId) {
         const result = await searchYouTubeVideo(query);
         if (!result) {
-          console.warn("❌ No matching YouTube video found");
+          console.warn("❌ No YouTube video found");
           return;
         }
         videoId = result;
@@ -69,7 +72,7 @@ export function PlayerScreen() {
     playSong();
   }, [currentSong, songVideoIds, setSongVideoId]);
 
-  /* 🔁 READ YOUTUBE STATE + PROGRESS */
+  /* 🔁 READ YOUTUBE STATE + PROGRESS + AUTOPLAY */
   useEffect(() => {
     if (!window.player || !window.playerReady) return;
 
@@ -77,6 +80,7 @@ export function PlayerScreen() {
       const state = window.player.getPlayerState();
       setYtState(state);
 
+      // Update progress
       if (state === window.YT.PlayerState.PLAYING) {
         const current = window.player.getCurrentTime();
         const duration = window.player.getDuration();
@@ -85,9 +89,19 @@ export function PlayerScreen() {
         }
       }
 
-      // Auto-next when video ends
-      if (state === window.YT.PlayerState.ENDED) {
+      // ✅ AUTOPLAY NEXT SONG
+      if (
+        state === window.YT.PlayerState.ENDED &&
+        !autoplayLock.current
+      ) {
+        autoplayLock.current = true;
         playNext();
+        setProgress(0);
+
+        // unlock after short delay
+        setTimeout(() => {
+          autoplayLock.current = false;
+        }, 1000);
       }
     }, 500);
 
@@ -106,14 +120,14 @@ export function PlayerScreen() {
     }
   };
 
-  /* ⏭️ NEXT */
-  const handleNext = () => {
-    playNext(); // PlayerScreen effect will load correct video
-  };
-
   /* ⏮️ PREVIOUS */
   const handlePrevious = () => {
-    playPrevious(); // PlayerScreen effect will load correct video
+    playPrevious();
+  };
+
+  /* ⏭️ NEXT */
+  const handleNext = () => {
+    playNext();
   };
 
   if (!currentSong) return null;
