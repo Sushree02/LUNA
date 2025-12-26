@@ -6,7 +6,7 @@ export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Don't show nav on player screen
+  // ❌ Hide bottom nav on full player screen
   if (location.pathname === '/player') {
     return null;
   }
@@ -18,33 +18,61 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="max-w-md mx-auto px-6 pb-6">
+    <div
+      className="
+        fixed bottom-0 left-0 right-0 z-40
+        h-16
+        pointer-events-auto
+      "
+    >
+      <div className="max-w-md mx-auto px-4 h-full">
         <motion.nav
-          className="glass-card rounded-3xl p-4 flex justify-around items-center"
-          initial={{ y: 100 }}
+          className="
+            h-full
+            glass-card
+            rounded-t-3xl
+            flex justify-around items-center
+          "
+          initial={{ y: 80 }}
           animate={{ y: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || 
-              (item.path === '/search' && location.pathname.startsWith('/mood'));
-            
+
+            const isActive =
+              location.pathname === item.path ||
+              (item.path === '/search' &&
+                location.pathname.startsWith('/mood'));
+
             return (
               <motion.button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${
-                  isActive ? 'bg-violet-twilight/30' : ''
-                }`}
+                className={`
+                  flex flex-col items-center gap-1
+                  px-3 py-2
+                  rounded-2xl
+                  transition-all
+                  ${isActive ? 'bg-violet-twilight/30' : ''}
+                `}
                 whileTap={{ scale: 0.9 }}
               >
                 <Icon
-                  style={{ width: 24, height: 24 }}
-                  className={isActive ? 'text-violet-twilight' : 'text-lavender'}
+                  size={22}
+                  className={
+                    isActive
+                      ? 'text-violet-twilight'
+                      : 'text-lavender'
+                  }
                 />
-                <span className={`body-sm ${isActive ? 'text-violet-twilight' : 'text-lavender'}`}>
+                <span
+                  className={`text-xs ${
+                    isActive
+                      ? 'text-violet-twilight'
+                      : 'text-lavender'
+                  }`}
+                >
                   {item.label}
                 </span>
               </motion.button>
