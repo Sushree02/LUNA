@@ -14,20 +14,62 @@ import { StarField } from "./StarField";
 import { useMusicStore } from "@/store/useMusicStore";
 import { useNavigate } from "react-router-dom";
 import { formatDuration } from "@/utils/formatters";
+import { searchYouTubeVideo } from "@/api/youtubeSearch";
 
 export function PlayerScreen() {
   const navigate = useNavigate();
-  const { currentSong, toggleLike, playNext, playPrevious } = useMusicStore();
+
+  const {
+    currentSong,
+    playNext,
+    playPrevious,
+    toggleLike,
+    songVideoIds,
+    setSongVideoId,
+  } = useMusicStore();
 
   const [progress, setProgress] = useState(0);
-  const [ytState, setYtState] = useState<number>(-1); // 🔑 YouTube is source of truth
+  const [ytState, setYtState] = useState<number>(-1);
 
   /* 🚫 No song → go back */
   useEffect(() => {
     if (!currentSong) navigate("/");
   }, [currentSong, navigate]);
 
-  /* 🔁 READ YOUTUBE STATE + PROGRESS (READ-ONLY) */
+  /* 🎯 LOAD & PLAY SONG WHEN currentSong CHANGES */
+  useEffect(() => {
+    if (!currentSong || !window.player || !window.playerReady) return;
+
+    const playSong = async () => {
+      const songTitle = currentSong.title ?? currentSong.name ?? "";
+      const artist =
+        typeof currentSong.artist === "string"
+          ? currentSong.artist
+          : currentSong.artists?.map((a) => a.name).join(" ") ?? "";
+
+      const query = `${songTitle} ${artist}`.trim();
+
+      let videoId = songVideoIds[currentSong.id!];
+
+      if (!videoId) {
+        const result = await searchYouTubeVideo(query);
+        if (!result) {
+          console.warn("❌ No matching YouTube video found");
+          return;
+        }
+        videoId = result;
+        setSongVideoId(currentSong.id!, videoId);
+      }
+
+      window.player.loadVideoById(videoId);
+      window.player.playVideo();
+      setProgress(0);
+    };
+
+    playSong();
+  }, [currentSong, songVideoIds, setSongVideoId]);
+
+  /* 🔁 READ YOUTUBE STATE + PROGRESS */
   useEffect(() => {
     if (!window.player || !window.playerReady) return;
 
@@ -42,17 +84,21 @@ export function PlayerScreen() {
           setProgress((current / duration) * 100);
         }
       }
+
+      // Auto-next when video ends
+      if (state === window.YT.PlayerState.ENDED) {
+        playNext();
+      }
     }, 500);
 
     return () => clearInterval(interval);
-  }, [currentSong]);
+  }, [playNext]);
 
-  /* ▶️ PLAY / PAUSE — CONTROL ONLY */
+  /* ▶️ PLAY / PAUSE */
   const handlePlayPause = () => {
     if (!window.player || !window.playerReady) return;
 
     const state = window.player.getPlayerState();
-
     if (state === window.YT.PlayerState.PLAYING) {
       window.player.pauseVideo();
     } else {
@@ -62,14 +108,12 @@ export function PlayerScreen() {
 
   /* ⏭️ NEXT */
   const handleNext = () => {
-    playNext();
-    window.player?.nextVideo();
+    playNext(); // PlayerScreen effect will load correct video
   };
 
   /* ⏮️ PREVIOUS */
   const handlePrevious = () => {
-    playPrevious();
-    window.player?.previousVideo();
+    playPrevious(); // PlayerScreen effect will load correct video
   };
 
   if (!currentSong) return null;

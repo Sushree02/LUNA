@@ -21,7 +21,8 @@ export function SearchResults() {
     performSearch,
     setCurrentSong,
     toggleLike,
-    setSongVideoId, // ✅ exists in store
+    setSongVideoId,
+    songVideoIds,
   } = useMusicStore();
 
   const [localQuery, setLocalQuery] = useState("");
@@ -42,47 +43,37 @@ export function SearchResults() {
     await performSearch();
   };
 
-  /* 🔥 SPOTUBE-STYLE CLICK HANDLER */
+  /* 🔥 CLEAN & TYPESAFE CLICK HANDLER */
   const handleSongClick = async (song: Song, index: number) => {
-    // 1️⃣ Update queue
+    // 1️⃣ Set queue + current song
     setCurrentSong(song, displaySongs, index);
 
-    if (!window.player || !window.playerReady) return;
-
-    // 2️⃣ Normalize title
+    // 2️⃣ Build YouTube search query
     const songTitle = song.title ?? song.name ?? "";
-
-    // 3️⃣ Normalize artist
-    let artist = "";
-    if (typeof song.artist === "string") {
-      artist = song.artist;
-    } else if (Array.isArray(song.artists)) {
-      artist = song.artists.map((a) => a.name).join(" ");
-    }
+    const artist =
+      typeof song.artist === "string"
+        ? song.artist
+        : song.artists?.map((a) => a.name).join(" ") ?? "";
 
     const query = `${songTitle} ${artist}`.trim();
 
-    // 🔑 CACHE = song.videoId (THIS MATCHES YOUR STORE)
-    let videoId: string | null = song.videoId ?? null;
+    // 3️⃣ Resolve YouTube videoId (cache first)
+    let resolvedVideoId: string | undefined =
+      song.videoId ?? songVideoIds[song.id!];
 
-    // 4️⃣ Search YouTube ONLY if not cached
-    if (!videoId) {
-      videoId = await searchYouTubeVideo(query);
+    if (!resolvedVideoId) {
+      const result = await searchYouTubeVideo(query);
 
-      if (!videoId) {
+      if (!result) {
         console.warn("❌ No matching YouTube video found");
         return;
       }
 
-      // cache it in Zustand
-      setSongVideoId(song.id!, videoId);
+      resolvedVideoId = result;
+      setSongVideoId(song.id!, resolvedVideoId);
     }
 
-    // 5️⃣ Play exact video
-    window.player.loadVideoById(videoId);
-    window.player.playVideo();
-
-    // 6️⃣ Open player
+    // 4️⃣ Navigate ONLY (PlayerScreen will play)
     navigate("/player");
   };
 

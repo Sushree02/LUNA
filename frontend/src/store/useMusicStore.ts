@@ -5,40 +5,46 @@ import { searchSpotify } from "@/api/spotifyApi";
 /* ================= TYPES ================= */
 
 interface MusicStore {
+  // Playback
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
 
+  // Queue
   queue: Song[];
   currentIndex: number;
 
-  /* 🔥 YOUTUBE CACHE */
+  // YouTube cache
   songVideoIds: Record<string, string>;
   setSongVideoId: (songId: string, videoId: string) => void;
 
+  // Libraries
   libraries: Library[];
   currentLibrary: Library | null;
 
+  // Search
   searchQuery: string;
   searchResults: Song[];
 
+  // Mood
   moodBlocks: MoodBlock[];
   isLoading: boolean;
 
-  /* PLAYER */
+  // Player actions
   setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
-  setProgress: (progress: number) => void;
   playNext: () => void;
   playPrevious: () => void;
+  togglePlayPause: () => void;
+  setProgress: (progress: number) => void;
 
-  /* LIKE */
+  // Like
   toggleLike: (song: Song) => void;
 
-  /* SEARCH */
+  // Search actions
   setSearchQuery: (query: string) => void;
   performSearch: () => Promise<void>;
 
-  /* MOODS */
+  // Mood actions
   loadMoodBlocks: () => Promise<void>;
 }
 
@@ -77,7 +83,6 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     queue: [],
     currentIndex: 0,
 
-    /* 🔥 CACHE INIT */
     songVideoIds: {},
 
     libraries: [favoritesLibrary],
@@ -89,32 +94,48 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     moodBlocks: [],
     isLoading: false,
 
-    /* ===== PLAYER ===== */
+    /* ===== PLAYER (FIXED) ===== */
 
-    setCurrentSong: (song, queue = [song], index = 0) =>
-      set({
-        currentSong: song,
-        queue,
-        currentIndex: index,
-        progress: 0,
-        isPlaying: true,
-      }),
+    setCurrentSong: (song, queue, index) => {
+      set((state) => {
+        // If queue + index provided (Search / Mood click)
+        if (queue && typeof index === "number") {
+          return {
+            currentSong: song,
+            queue,
+            currentIndex: index,
+            progress: 0,
+            isPlaying: true,
+          };
+        }
 
-    setProgress: (progress) => set({ progress }),
+        // Otherwise keep existing queue (Next / Previous safety)
+        const existingIndex = state.queue.findIndex(
+          (s) => s.id === song.id
+        );
+
+        return {
+          currentSong: song,
+          currentIndex:
+            existingIndex !== -1 ? existingIndex : state.currentIndex,
+          progress: 0,
+          isPlaying: true,
+        };
+      });
+    },
 
     playNext: () =>
       set((state) => {
         if (!state.queue.length) return state;
 
-        const nextIndex =
-          state.currentIndex + 1 < state.queue.length
-            ? state.currentIndex + 1
-            : 0;
+        const nextIndex = state.currentIndex + 1;
+        if (nextIndex >= state.queue.length) return state;
 
         return {
           currentIndex: nextIndex,
           currentSong: state.queue[nextIndex],
           progress: 0,
+          isPlaying: true,
         };
       }),
 
@@ -122,19 +143,23 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       set((state) => {
         if (!state.queue.length) return state;
 
-        const prevIndex =
-          state.currentIndex > 0
-            ? state.currentIndex - 1
-            : state.queue.length - 1;
+        const prevIndex = state.currentIndex - 1;
+        if (prevIndex < 0) return state;
 
         return {
           currentIndex: prevIndex,
           currentSong: state.queue[prevIndex],
           progress: 0,
+          isPlaying: true,
         };
       }),
 
-    /* ===== 🔥 YOUTUBE CACHE ===== */
+    togglePlayPause: () =>
+      set((state) => ({ isPlaying: !state.isPlaying })),
+
+    setProgress: (progress) => set({ progress }),
+
+    /* ===== YOUTUBE CACHE ===== */
 
     setSongVideoId: (songId, videoId) =>
       set((state) => ({
