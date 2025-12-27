@@ -1,11 +1,12 @@
 import { Music, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMusicStore } from "@/store/useMusicStore";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
 export function MiniPlayer() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentSong } = useMusicStore();
 
   const [hidden, setHidden] = useState(false);
@@ -15,7 +16,11 @@ export function MiniPlayer() {
     setHidden(false);
   }, [currentSong?.id]);
 
+  // ❌ No song or user closed it
   if (!currentSong || hidden) return null;
+
+  // ❌ Hide on PlayerScreen
+  if (location.pathname === "/player") return null;
 
   const bars = Array.from({ length: 32 });
 
@@ -80,7 +85,7 @@ export function MiniPlayer() {
             {currentSong.artist}
           </p>
 
-          {/* 🌊 Fake animated waveform (shorter) */}
+          {/* 🌊 Fake animated waveform */}
           <div className="mt-1 flex items-end gap-[2px] h-3">
             {bars.map((_, i) => (
               <motion.span

@@ -1,48 +1,22 @@
-import { useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Plus, ArrowLeft } from 'lucide-react';
-import { SongRow } from './SongRow';
-import { StarField } from './StarField';
-import { useMusicStore } from '@/store/useMusicStore';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft } from "lucide-react";
+import { SongRow } from "./SongRow";
+import { StarField } from "./StarField";
+import { useMusicStore } from "@/store/useMusicStore";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export function LibraryScreen() {
   const navigate = useNavigate();
-  const {
-    libraries,
-    currentLibrary,
-    setCurrentLibrary,
-    createLibrary,
-    setCurrentSong,
-    toggleLike,
-  } = useMusicStore();
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newLibraryName, setNewLibraryName] = useState('');
+  const { libraries, toggleLike, setCurrentSong } = useMusicStore();
 
-  const handleCreateLibrary = () => {
-    if (newLibraryName.trim()) {
-      createLibrary(newLibraryName);
-      setNewLibraryName('');
-      setIsDialogOpen(false);
-    }
-  };
+  // ✅ Favorites is the ONLY source of truth
+  const favoritesLibrary = libraries.find(
+    (lib) => lib.id === "favorites"
+  );
 
-  /* ✅ Source of truth for active library */
-  const activeLibrary =
-    libraries.find((l) => l.id === currentLibrary?.id) ?? libraries[0];
-
-  const displaySongs = activeLibrary?.songs ?? [];
+  const songs = favoritesLibrary?.songs ?? [];
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -50,91 +24,32 @@ export function LibraryScreen() {
 
       <div className="relative z-10 max-w-md mx-auto px-6 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 rounded-full glass-card hover:bg-violet-twilight/20 transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-periwinkle" />
-            </button>
-            <h1 className="heading-lg text-periwinkle">Library</h1>
-          </div>
-
-          {/* Create Library */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                size="icon"
-                className="rounded-full bg-gradient-to-br from-violet-twilight to-indigo-velvet hover:scale-110 transition-transform"
-              >
-                <Plus className="w-5 h-5 text-periwinkle" />
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent className="glass-card border-periwinkle/30">
-              <DialogHeader>
-                <DialogTitle className="heading-md text-periwinkle">
-                  Create Library
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4 mt-4">
-                <Input
-                  placeholder="Library name"
-                  value={newLibraryName}
-                  onChange={(e) => setNewLibraryName(e.target.value)}
-                  className="glass-card text-periwinkle placeholder:text-lavender/60 border-periwinkle/30"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateLibrary();
-                  }}
-                />
-                <Button
-                  onClick={handleCreateLibrary}
-                  className="w-full bg-gradient-to-br from-violet-twilight to-indigo-velvet hover:opacity-90"
-                >
-                  Create
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Library Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {libraries.map((library) => (
-            <motion.button
-              key={library.id}
-              onClick={() => setCurrentLibrary(library)}
-              className={`px-4 py-2 rounded-full whitespace-nowrap body-md transition-all ${
-                activeLibrary?.id === library.id
-                  ? 'bg-gradient-to-br from-violet-twilight to-indigo-velvet text-periwinkle glow-soft'
-                  : 'glass-card text-lavender hover:bg-violet-twilight/20'
-              }`}
-              whileTap={{ scale: 0.95 }}
-            >
-              {library.name}
-            </motion.button>
-          ))}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2 rounded-full glass-card"
+          >
+            <ArrowLeft className="w-6 h-6 text-periwinkle" />
+          </button>
+          <h1 className="heading-lg text-periwinkle">Liked Songs</h1>
         </div>
 
         {/* Songs */}
-        <ScrollArea className="h-[calc(100vh-250px)]">
+        <ScrollArea className="h-[calc(100vh-180px)]">
           <div className="space-y-3 pr-4">
-            {displaySongs.length > 0 ? (
-              displaySongs.map((song, index) => (
+            {songs.length > 0 ? (
+              songs.map((song, index) => (
                 <motion.div
                   key={song.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: index * 0.04 }}
                 >
                   <SongRow
                     song={song}
                     onSelect={() => {
-                      /* ✅ THIS IS THE CRITICAL FIX */
-                      setCurrentSong(song, displaySongs, index);
-                      navigate('/player');
+                      setCurrentSong(song, songs, index);
+                      navigate("/player");
                     }}
                     onLikeToggle={() => toggleLike(song)}
                   />
@@ -142,15 +57,15 @@ export function LibraryScreen() {
               ))
             ) : (
               <motion.div
-                className="text-center py-12"
+                className="text-center py-16"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
                 <p className="body-lg text-lavender">
-                  No songs in this library yet
+                  No liked songs yet 💔
                 </p>
                 <p className="body-sm text-lavender/60 mt-2">
-                  Like songs to add them to your favorites
+                  Tap the heart icon to save songs here
                 </p>
               </motion.div>
             )}

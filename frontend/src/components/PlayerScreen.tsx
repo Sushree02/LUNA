@@ -26,12 +26,12 @@ export function PlayerScreen() {
     playPrevious,
     songVideoIds,
     setSongVideoId,
+    libraries,
   } = useMusicStore();
 
   const [progress, setProgress] = useState(0);
   const [ytState, setYtState] = useState<number>(-1);
 
-  // 🔒 Prevent autoplay firing multiple times
   const autoplayLock = useRef(false);
 
   /* 🚫 No song → go back */
@@ -39,7 +39,15 @@ export function PlayerScreen() {
     if (!currentSong) navigate("/");
   }, [currentSong, navigate]);
 
-  /* 🎯 LOAD & PLAY SONG WHEN currentSong CHANGES */
+  /* ❤️ SOURCE OF TRUTH FOR LIKE */
+  const favorites =
+    libraries.find((lib) => lib.id === "favorites")?.songs || [];
+
+  const isLiked = favorites.some(
+    (s) => s.id === currentSong?.id
+  );
+
+  /* 🎯 LOAD & PLAY SONG */
   useEffect(() => {
     if (!currentSong || !window.player || !window.playerReady) return;
 
@@ -56,10 +64,7 @@ export function PlayerScreen() {
 
       if (!videoId) {
         const result = await searchYouTubeVideo(query);
-        if (!result) {
-          console.warn("❌ No YouTube video found");
-          return;
-        }
+        if (!result) return;
         videoId = result;
         setSongVideoId(currentSong.id!, videoId);
       }
@@ -72,7 +77,7 @@ export function PlayerScreen() {
     playSong();
   }, [currentSong, songVideoIds, setSongVideoId]);
 
-  /* 🔁 READ YOUTUBE STATE + PROGRESS + AUTOPLAY */
+  /* 🔁 PROGRESS + AUTOPLAY */
   useEffect(() => {
     if (!window.player || !window.playerReady) return;
 
@@ -80,7 +85,6 @@ export function PlayerScreen() {
       const state = window.player.getPlayerState();
       setYtState(state);
 
-      // Update progress
       if (state === window.YT.PlayerState.PLAYING) {
         const current = window.player.getCurrentTime();
         const duration = window.player.getDuration();
@@ -89,7 +93,6 @@ export function PlayerScreen() {
         }
       }
 
-      // ✅ AUTOPLAY NEXT SONG
       if (
         state === window.YT.PlayerState.ENDED &&
         !autoplayLock.current
@@ -98,7 +101,6 @@ export function PlayerScreen() {
         playNext();
         setProgress(0);
 
-        // unlock after short delay
         setTimeout(() => {
           autoplayLock.current = false;
         }, 1000);
@@ -118,16 +120,6 @@ export function PlayerScreen() {
     } else {
       window.player.playVideo();
     }
-  };
-
-  /* ⏮️ PREVIOUS */
-  const handlePrevious = () => {
-    playPrevious();
-  };
-
-  /* ⏭️ NEXT */
-  const handleNext = () => {
-    playNext();
   };
 
   if (!currentSong) return null;
@@ -173,19 +165,19 @@ export function PlayerScreen() {
           </div>
 
           <div className="flex justify-center gap-6 mt-6">
-            {/* Like */}
+            {/* ❤️ Like */}
             <button onClick={() => toggleLike(currentSong)}>
               <Heart
                 className={
-                  currentSong.isLiked
+                  isLiked
                     ? "fill-pink-500 text-pink-500"
-                    : ""
+                    : "text-white"
                 }
               />
             </button>
 
             {/* Previous */}
-            <button onClick={handlePrevious}>
+            <button onClick={playPrevious}>
               <SkipBack />
             </button>
 
@@ -198,7 +190,7 @@ export function PlayerScreen() {
             </button>
 
             {/* Next */}
-            <button onClick={handleNext}>
+            <button onClick={playNext}>
               <SkipForward />
             </button>
           </div>
