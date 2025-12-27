@@ -8,7 +8,6 @@ import {
   SkipBack,
   SkipForward,
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { StarField } from "./StarField";
 import { useMusicStore } from "@/store/useMusicStore";
@@ -39,7 +38,7 @@ export function PlayerScreen() {
     if (!currentSong) navigate("/");
   }, [currentSong, navigate]);
 
-  /* ❤️ SOURCE OF TRUTH FOR LIKE */
+  /* ❤️ Like state from favorites */
   const favorites =
     libraries.find((lib) => lib.id === "favorites")?.songs || [];
 
@@ -47,16 +46,16 @@ export function PlayerScreen() {
     (s) => s.id === currentSong?.id
   );
 
-  /* 🎯 LOAD & PLAY SONG */
+  /* 🎯 Load & play song */
   useEffect(() => {
     if (!currentSong || !window.player || !window.playerReady) return;
 
     const playSong = async () => {
-      const title = currentSong.title ?? currentSong.name ?? "";
+      const title = currentSong.title ?? "";
       const artist =
         typeof currentSong.artist === "string"
           ? currentSong.artist
-          : currentSong.artists?.map((a) => a.name).join(" ") ?? "";
+          : "";
 
       const query = `${title} ${artist}`.trim();
 
@@ -77,7 +76,7 @@ export function PlayerScreen() {
     playSong();
   }, [currentSong, songVideoIds, setSongVideoId]);
 
-  /* 🔁 PROGRESS + AUTOPLAY */
+  /* 🔁 Progress tracking + autoplay */
   useEffect(() => {
     if (!window.player || !window.playerReady) return;
 
@@ -110,7 +109,7 @@ export function PlayerScreen() {
     return () => clearInterval(interval);
   }, [playNext]);
 
-  /* ▶️ PLAY / PAUSE */
+  /* ▶️ Play / Pause */
   const handlePlayPause = () => {
     if (!window.player || !window.playerReady) return;
 
@@ -120,6 +119,18 @@ export function PlayerScreen() {
     } else {
       window.player.playVideo();
     }
+  };
+
+  /* 🎯 Seek (drag progress bar) */
+  const handleSeek = (value: number) => {
+    if (!window.player || !window.playerReady) return;
+
+    const duration = window.player.getDuration();
+    if (!duration) return;
+
+    const newTime = (value / 100) * duration;
+    window.player.seekTo(newTime, true);
+    setProgress(value);
   };
 
   if (!currentSong) return null;
@@ -135,12 +146,12 @@ export function PlayerScreen() {
       <StarField />
 
       <div className="max-w-md mx-auto px-6 py-8 flex flex-col h-screen">
-        {/* Close */}
+        {/* ❌ Close */}
         <button onClick={() => navigate(-1)} className="self-end mb-4">
           <X />
         </button>
 
-        {/* Cover */}
+        {/* 🎵 Cover */}
         <Avatar className="w-64 h-64 mx-auto my-6">
           <AvatarImage src={currentSong.cover} />
           <AvatarFallback>
@@ -148,7 +159,7 @@ export function PlayerScreen() {
           </AvatarFallback>
         </Avatar>
 
-        {/* Controls */}
+        {/* 🎶 Controls */}
         <div className="glass-card p-6 rounded-3xl">
           <h2 className="text-center text-lg font-semibold">
             {currentSong.title}
@@ -157,7 +168,20 @@ export function PlayerScreen() {
             {currentSong.artist}
           </p>
 
-          <Progress value={progress} className="my-3" />
+          {/* 🎚️ Spotify-style progress bar */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={progress}
+            onChange={(e) => handleSeek(Number(e.target.value))}
+            className="
+              w-full my-4 cursor-pointer
+              accent-sky-400
+              h-2 rounded-full
+              hover:accent-sky-300
+            "
+          />
 
           <div className="flex justify-between text-sm opacity-70">
             <span>{formatDuration(currentTime)}</span>
@@ -176,12 +200,12 @@ export function PlayerScreen() {
               />
             </button>
 
-            {/* Previous */}
+            {/* ⏮️ Previous */}
             <button onClick={playPrevious}>
               <SkipBack />
             </button>
 
-            {/* Play / Pause */}
+            {/* ▶️ Play / Pause */}
             <button
               onClick={handlePlayPause}
               className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center"
@@ -189,7 +213,7 @@ export function PlayerScreen() {
               {isPlaying ? <Pause /> : <Play />}
             </button>
 
-            {/* Next */}
+            {/* ⏭️ Next */}
             <button onClick={playNext}>
               <SkipForward />
             </button>
