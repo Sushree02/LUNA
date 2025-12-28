@@ -30,6 +30,7 @@ export interface Song {
 export interface MoodBlock {
   mood: string;
   title: string;
+  description?: string;
   songs: Song[];
 }
 

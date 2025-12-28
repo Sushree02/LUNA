@@ -1,115 +1,100 @@
-import type { Song, MoodBlock, Library } from '@/types';
+import type { Song, MoodBlock, Library } from "@/types";
 
-// Mock songs data
+/* ================= MOCK SONGS ================= */
+
 export const mockSongs: Song[] = [
   {
-    id: '1',
-    title: 'Midnight Dreams',
-    artist: 'Luna Waves',
-    album: 'Night Stories',
+    id: "1",
+    title: "Midnight Dreams",
+    artist: "Luna Waves",
     duration: 234,
-    coverUrl: 'https://picsum.photos/200/200?random=1',
+    cover: "https://picsum.photos/200/200?random=1",
     isLiked: true,
   },
   {
-    id: '2',
-    title: 'Starlight Serenade',
-    artist: 'Cosmic Cafe',
-    album: 'Celestial Sounds',
+    id: "2",
+    title: "Starlight Serenade",
+    artist: "Cosmic Cafe",
     duration: 198,
-    coverUrl: 'https://picsum.photos/200/200?random=2',
+    cover: "https://picsum.photos/200/200?random=2",
     isLiked: false,
   },
   {
-    id: '3',
-    title: 'Peaceful Nights',
-    artist: 'Dreamy Echo',
-    album: 'Calm Collection',
+    id: "3",
+    title: "Peaceful Nights",
+    artist: "Dreamy Echo",
     duration: 267,
-    coverUrl: 'https://picsum.photos/200/200?random=3',
+    cover: "https://picsum.photos/200/200?random=3",
     isLiked: true,
   },
   {
-    id: '4',
-    title: 'Soft Whispers',
-    artist: 'Silent Moon',
-    album: 'Quiet Hours',
+    id: "4",
+    title: "Soft Whispers",
+    artist: "Silent Moon",
     duration: 189,
-    coverUrl: 'https://picsum.photos/200/200?random=4',
+    cover: "https://picsum.photos/200/200?random=4",
     isLiked: false,
   },
   {
-    id: '5',
-    title: 'Twilight Melody',
-    artist: 'Evening Breeze',
-    album: 'Dusk Sessions',
+    id: "5",
+    title: "Twilight Melody",
+    artist: "Evening Breeze",
     duration: 245,
-    coverUrl: 'https://picsum.photos/200/200?random=5',
+    cover: "https://picsum.photos/200/200?random=5",
     isLiked: true,
   },
   {
-    id: '6',
-    title: 'Cozy Corner',
-    artist: 'Warm Vibes',
-    album: 'Comfort Zone',
+    id: "6",
+    title: "Cozy Corner",
+    artist: "Warm Vibes",
     duration: 212,
-    coverUrl: 'https://picsum.photos/200/200?random=6',
+    cover: "https://picsum.photos/200/200?random=6",
     isLiked: false,
   },
 ];
 
-// Mock mood blocks
+/* ================= MOCK MOOD BLOCKS ================= */
+
 export const mockMoodBlocks: MoodBlock[] = [
   {
-    id: 'chill',
-    mood: 'chill',
-    title: 'Chill Vibes',
-    description: 'Relax and unwind',
+    mood: "chill",
+    title: "Chill Vibes",
     songs: [mockSongs[0], mockSongs[1], mockSongs[2]],
   },
   {
-    id: 'focus',
-    mood: 'focus',
-    title: 'Focus Mode',
-    description: 'Stay concentrated',
+    mood: "focus",
+    title: "Focus Mode",
     songs: [mockSongs[1], mockSongs[3], mockSongs[4]],
   },
   {
-    id: 'late-night',
-    mood: 'late-night',
-    title: 'Late Night',
-    description: 'For quiet hours',
+    mood: "late-night",
+    title: "Late Night",
     songs: [mockSongs[0], mockSongs[2], mockSongs[5]],
   },
   {
-    id: 'dreamy',
-    mood: 'dreamy',
-    title: 'Dreamy',
-    description: 'Float away',
+    mood: "dreamy",
+    title: "Dreamy",
     songs: [mockSongs[2], mockSongs[4], mockSongs[5]],
   },
   {
-    id: 'peaceful',
-    mood: 'peaceful',
-    title: 'Peaceful',
-    description: 'Find your calm',
+    mood: "peaceful",
+    title: "Peaceful",
     songs: [mockSongs[0], mockSongs[3], mockSongs[5]],
   },
   {
-    id: 'cozy',
-    mood: 'cozy',
-    title: 'Cozy Corner',
-    description: 'Warm and comfortable',
+    mood: "cozy",
+    title: "Cozy Corner",
     songs: [mockSongs[1], mockSongs[2], mockSongs[5]],
   },
 ];
 
-// Mock libraries
+/* ================= MOCK LIBRARIES ================= */
+
 export const mockLibraries: Library[] = [
   {
-    id: 'favorites',
-    name: 'My Favorites',
-    songs: mockSongs.filter(song => song.isLiked),
-    createdAt: new Date('2024-01-01'),
+    id: "favorites",
+    name: "My Favorites",
+    songs: mockSongs.filter((song) => song.isLiked),
+    createdAt: new Date("2024-01-01"),
   },
 ];
