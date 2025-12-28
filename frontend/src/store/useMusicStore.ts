@@ -2,6 +2,10 @@ import { create } from "zustand";
 import type { Song, MoodBlock, Library } from "@/types";
 import { searchSpotify } from "@/api/spotifyApi";
 
+/* ================= ENV ================= */
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 /* ================= LOCAL STORAGE KEYS ================= */
 
 const FAVORITES_KEY = "luna_favorites";
@@ -115,25 +119,13 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       saveJSON(LAST_PLAYED_KEY, song);
       saveJSON(PLAYBACK_POSITION_KEY, 0);
 
-      set(() => {
-        if (queue && typeof index === "number") {
-          return {
-            currentSong: song,
-            queue,
-            currentIndex: index,
-            progress: 0,
-            isPlaying: true,
-          };
-        }
-
-        return {
-          currentSong: song,
-          queue: [song],
-          currentIndex: 0,
-          progress: 0,
-          isPlaying: true,
-        };
-      });
+      set(() => ({
+        currentSong: song,
+        queue: queue ?? [song],
+        currentIndex: index ?? 0,
+        progress: 0,
+        isPlaying: true,
+      }));
     },
 
     playNext: () =>
@@ -223,7 +215,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       }
     },
 
-    /* ===== MOODS (✅ FIXED URL) ===== */
+    /* ===== MOODS (🔥 CLEAN & ENV-BASED) ===== */
 
     loadMoodBlocks: async () => {
       try {
@@ -234,7 +226,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         const moodBlocks = await Promise.all(
           moods.map(async (mood) => {
             const res = await fetch(
-              `https://luna-zd51.onrender.com/api/spotify/mood/${mood}`
+              `${BACKEND_URL}/api/spotify/mood/${mood}`
             );
             const songs = await res.json();
             return { mood, title: mood.toUpperCase(), songs };

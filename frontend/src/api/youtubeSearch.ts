@@ -1,11 +1,11 @@
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 export async function searchYouTubeVideo(
   query: string
 ): Promise<string | null> {
   try {
     const res = await fetch(
-      `https://luna-zd51.onrender.com/api/youtube/search?q=${encodeURIComponent(
-        query
-      )}`
+      `${BACKEND_URL}/api/youtube/search?q=${encodeURIComponent(query)}`
     );
 
     if (!res.ok) {
