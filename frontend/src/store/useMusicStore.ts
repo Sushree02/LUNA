@@ -78,7 +78,6 @@ const normalizeSong = (song: Song): Song => ({
 /* ================= STORE ================= */
 
 export const useMusicStore = create<MusicStore>((set, get) => {
-  /* 🔁 Restore persisted data */
   const favoriteSongs = loadJSON<Song[]>(FAVORITES_KEY, []);
   const lastPlayed = loadJSON<Song | null>(LAST_PLAYED_KEY, null);
   const savedProgress = loadJSON<number>(PLAYBACK_POSITION_KEY, 0);
@@ -92,8 +91,6 @@ export const useMusicStore = create<MusicStore>((set, get) => {
   };
 
   return {
-    /* ===== STATE ===== */
-
     currentSong: lastPlayed,
     isPlaying: false,
     progress: savedProgress,
@@ -179,17 +176,12 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       set({ progress });
     },
 
-    /* ===== 🎥 YOUTUBE VIDEO CACHE (FIXED) ===== */
+    /* ===== 🎥 YOUTUBE CACHE ===== */
 
     setSongVideoId: (songId, videoId) =>
       set((state) => {
-        const updated = {
-          ...state.songVideoIds,
-          [songId]: videoId,
-        };
-
+        const updated = { ...state.songVideoIds, [songId]: videoId };
         saveJSON(VIDEO_IDS_KEY, updated);
-
         return { songVideoIds: updated };
       }),
 
@@ -207,9 +199,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         saveJSON(FAVORITES_KEY, updatedSongs);
 
         return {
-          libraries: [
-            { ...favLib, songs: updatedSongs },
-          ],
+          libraries: [{ ...favLib, songs: updatedSongs }],
           currentSong:
             state.currentSong?.id === song.id
               ? { ...state.currentSong, isLiked: !isLiked }
@@ -233,7 +223,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       }
     },
 
-    /* ===== MOODS ===== */
+    /* ===== MOODS (✅ FIXED URL) ===== */
 
     loadMoodBlocks: async () => {
       try {
@@ -244,7 +234,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         const moodBlocks = await Promise.all(
           moods.map(async (mood) => {
             const res = await fetch(
-              `http://localhost:5000/api/spotify/mood/${mood}`
+              `https://luna-zd51.onrender.com/api/spotify/mood/${mood}`
             );
             const songs = await res.json();
             return { mood, title: mood.toUpperCase(), songs };

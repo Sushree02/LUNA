@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://localhost:5000/api/spotify";
+const API_BASE = "https://luna-zd51.onrender.com/api/spotify";
 
 export const searchSpotify = async (query: string) => {
   const res = await axios.get(`${API_BASE}/search?q=${query}`);

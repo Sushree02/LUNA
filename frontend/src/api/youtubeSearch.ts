@@ -3,7 +3,9 @@ export async function searchYouTubeVideo(
 ): Promise<string | null> {
   try {
     const res = await fetch(
-      `http://localhost:5000/api/youtube/search?q=${encodeURIComponent(query)}`
+      `https://luna-zd51.onrender.com/api/youtube/search?q=${encodeURIComponent(
+        query
+      )}`
     );
 
     if (!res.ok) {
