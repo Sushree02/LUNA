@@ -43,29 +43,33 @@ export function SearchResults() {
     await performSearch();
   };
 
-  /* 🔥 CLEAN & TYPESAFE CLICK HANDLER */
+  /* 🔥 FIXED CLICK HANDLER */
   const handleSongClick = async (song: Song, index: number) => {
     // 1️⃣ Set queue + current song
     setCurrentSong(song, displaySongs, index);
 
-    // 2️⃣ Build YouTube search query
+    // 2️⃣ Build STRONG YouTube search query ✅
     const songTitle = song.title ?? song.name ?? "";
     const artist =
       typeof song.artist === "string"
         ? song.artist
         : song.artists?.map((a) => a.name).join(" ") ?? "";
 
-    const query = `${songTitle} ${artist}`.trim();
+    // 🔥 THIS IS THE IMPORTANT FIX
+    const query = `${songTitle} ${artist} official audio`.trim();
 
     // 3️⃣ Resolve YouTube videoId (cache first)
-    let resolvedVideoId: string | undefined =
+    let resolvedVideoId =
       song.videoId ?? songVideoIds[song.id!];
 
     if (!resolvedVideoId) {
       const result = await searchYouTubeVideo(query);
 
       if (!result) {
-        console.warn("❌ No matching YouTube video found");
+        console.warn(
+          "❌ No matching YouTube video found for:",
+          query
+        );
         return;
       }
 
@@ -73,7 +77,7 @@ export function SearchResults() {
       setSongVideoId(song.id!, resolvedVideoId);
     }
 
-    // 4️⃣ Navigate ONLY (PlayerScreen will play)
+    // 4️⃣ Navigate ONLY
     navigate("/player");
   };
 
@@ -90,7 +94,9 @@ export function SearchResults() {
           >
             <ArrowLeft className="w-6 h-6 text-periwinkle" />
           </button>
-          <h1 className="heading-lg text-periwinkle">{title}</h1>
+          <h1 className="heading-lg text-periwinkle">
+            {title}
+          </h1>
         </div>
 
         {/* Search */}
@@ -114,7 +120,9 @@ export function SearchResults() {
                 <motion.div key={song.id}>
                   <SongRow
                     song={song}
-                    onSelect={() => handleSongClick(song, index)}
+                    onSelect={() =>
+                      handleSongClick(song, index)
+                    }
                     onLikeToggle={() => toggleLike(song)}
                   />
                 </motion.div>

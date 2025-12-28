@@ -1,16 +1,26 @@
-const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+export async function searchYouTubeVideo(
+  query: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/youtube/search?q=${encodeURIComponent(query)}`
+    );
 
-export async function searchYouTubeVideo(query: string): Promise<string | null> {
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(
-    query
-  )}&key=${API_KEY}`;
+    if (!res.ok) {
+      console.error("Backend YouTube error");
+      return null;
+    }
 
-  const res = await fetch(url);
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.items || data.items.length === 0) {
+    if (!data.videoId) {
+      console.warn("No matching YouTube video found for:", query);
+      return null;
+    }
+
+    return data.videoId;
+  } catch (err) {
+    console.error("YouTube fetch failed", err);
     return null;
   }
-
-  return data.items[0].id.videoId; // ✅ STRING ONLY
 }

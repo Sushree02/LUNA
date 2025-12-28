@@ -38,7 +38,7 @@ export function PlayerScreen() {
     if (!currentSong) navigate("/");
   }, [currentSong, navigate]);
 
-  /* ❤️ Like state from favorites */
+  /* ❤️ Like state */
   const favorites =
     libraries.find((lib) => lib.id === "favorites")?.songs || [];
 
@@ -57,13 +57,17 @@ export function PlayerScreen() {
           ? currentSong.artist
           : "";
 
-      const query = `${title} ${artist}`.trim();
+      // 🔥 FIXED QUERY (IMPORTANT)
+      const query = `${title} ${artist} official audio`.trim();
 
       let videoId = songVideoIds[currentSong.id!];
 
       if (!videoId) {
         const result = await searchYouTubeVideo(query);
-        if (!result) return;
+        if (!result) {
+          console.warn("❌ No YouTube match for:", query);
+          return;
+        }
         videoId = result;
         setSongVideoId(currentSong.id!, videoId);
       }
@@ -76,7 +80,7 @@ export function PlayerScreen() {
     playSong();
   }, [currentSong, songVideoIds, setSongVideoId]);
 
-  /* 🔁 Progress tracking + autoplay */
+  /* 🔁 Progress + autoplay */
   useEffect(() => {
     if (!window.player || !window.playerReady) return;
 
@@ -121,7 +125,7 @@ export function PlayerScreen() {
     }
   };
 
-  /* 🎯 Seek (drag progress bar) */
+  /* 🎯 Seek */
   const handleSeek = (value: number) => {
     if (!window.player || !window.playerReady) return;
 
@@ -139,19 +143,18 @@ export function PlayerScreen() {
     (progress / 100) * (currentSong.duration || 0)
   );
 
-  const isPlaying = ytState === window.YT?.PlayerState?.PLAYING;
+  const isPlaying =
+    ytState === window.YT?.PlayerState?.PLAYING;
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <StarField />
 
       <div className="max-w-md mx-auto px-6 py-8 flex flex-col h-screen">
-        {/* ❌ Close */}
         <button onClick={() => navigate(-1)} className="self-end mb-4">
           <X />
         </button>
 
-        {/* 🎵 Cover */}
         <Avatar className="w-64 h-64 mx-auto my-6">
           <AvatarImage src={currentSong.cover} />
           <AvatarFallback>
@@ -159,7 +162,6 @@ export function PlayerScreen() {
           </AvatarFallback>
         </Avatar>
 
-        {/* 🎶 Controls */}
         <div className="glass-card p-6 rounded-3xl">
           <h2 className="text-center text-lg font-semibold">
             {currentSong.title}
@@ -168,18 +170,18 @@ export function PlayerScreen() {
             {currentSong.artist}
           </p>
 
-          {/* 🎚️ Spotify-style progress bar */}
           <input
             type="range"
             min={0}
             max={100}
             value={progress}
-            onChange={(e) => handleSeek(Number(e.target.value))}
+            onChange={(e) =>
+              handleSeek(Number(e.target.value))
+            }
             className="
               w-full my-4 cursor-pointer
               accent-sky-400
               h-2 rounded-full
-              hover:accent-sky-300
             "
           />
 
@@ -189,7 +191,6 @@ export function PlayerScreen() {
           </div>
 
           <div className="flex justify-center gap-6 mt-6">
-            {/* ❤️ Like */}
             <button onClick={() => toggleLike(currentSong)}>
               <Heart
                 className={
@@ -200,12 +201,10 @@ export function PlayerScreen() {
               />
             </button>
 
-            {/* ⏮️ Previous */}
             <button onClick={playPrevious}>
               <SkipBack />
             </button>
 
-            {/* ▶️ Play / Pause */}
             <button
               onClick={handlePlayPause}
               className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center"
@@ -213,7 +212,6 @@ export function PlayerScreen() {
               {isPlaying ? <Pause /> : <Play />}
             </button>
 
-            {/* ⏭️ Next */}
             <button onClick={playNext}>
               <SkipForward />
             </button>

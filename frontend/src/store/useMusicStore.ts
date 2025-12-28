@@ -2,40 +2,26 @@ import { create } from "zustand";
 import type { Song, MoodBlock, Library } from "@/types";
 import { searchSpotify } from "@/api/spotifyApi";
 
-/* ================= LOCAL STORAGE ================= */
+/* ================= LOCAL STORAGE KEYS ================= */
 
 const FAVORITES_KEY = "luna_favorites";
 const LAST_PLAYED_KEY = "luna_last_played";
+const VIDEO_IDS_KEY = "luna_song_video_ids";
 export const PLAYBACK_POSITION_KEY = "luna_playback_position";
 
-/* ---------- Favorites ---------- */
+/* ================= HELPERS ================= */
 
-const loadFavorites = (): Song[] => {
+const loadJSON = <T>(key: string, fallback: T): T => {
   try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return [];
+    return fallback;
   }
 };
 
-const saveFavorites = (songs: Song[]) => {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(songs));
-};
-
-/* ---------- Last Played ---------- */
-
-const loadLastPlayed = (): Song | null => {
-  try {
-    const raw = localStorage.getItem(LAST_PLAYED_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveLastPlayed = (song: Song) => {
-  localStorage.setItem(LAST_PLAYED_KEY, JSON.stringify(song));
+const saveJSON = (key: string, value: unknown) => {
+  localStorage.setItem(key, JSON.stringify(value));
 };
 
 /* ================= TYPES ================= */
@@ -74,7 +60,7 @@ interface MusicStore {
   loadMoodBlocks: () => Promise<void>;
 }
 
-/* ================= HELPERS ================= */
+/* ================= NORMALIZER ================= */
 
 const normalizeSong = (song: Song): Song => ({
   ...song,
@@ -92,8 +78,11 @@ const normalizeSong = (song: Song): Song => ({
 /* ================= STORE ================= */
 
 export const useMusicStore = create<MusicStore>((set, get) => {
-  const favoriteSongs = loadFavorites();
-  const lastPlayed = loadLastPlayed();
+  /* 🔁 Restore persisted data */
+  const favoriteSongs = loadJSON<Song[]>(FAVORITES_KEY, []);
+  const lastPlayed = loadJSON<Song | null>(LAST_PLAYED_KEY, null);
+  const savedProgress = loadJSON<number>(PLAYBACK_POSITION_KEY, 0);
+  const videoIdCache = loadJSON<Record<string, string>>(VIDEO_IDS_KEY, {});
 
   const favoritesLibrary: Library = {
     id: "favorites",
@@ -107,12 +96,12 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     currentSong: lastPlayed,
     isPlaying: false,
-    progress: 0,
+    progress: savedProgress,
 
     queue: lastPlayed ? [lastPlayed] : [],
     currentIndex: 0,
 
-    songVideoIds: {},
+    songVideoIds: videoIdCache,
 
     libraries: [favoritesLibrary],
     currentLibrary: favoritesLibrary,
@@ -126,9 +115,10 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     /* ===== PLAYER ===== */
 
     setCurrentSong: (song, queue, index) => {
-      saveLastPlayed(song);
+      saveJSON(LAST_PLAYED_KEY, song);
+      saveJSON(PLAYBACK_POSITION_KEY, 0);
 
-      set((state) => {
+      set(() => {
         if (queue && typeof index === "number") {
           return {
             currentSong: song,
@@ -139,14 +129,10 @@ export const useMusicStore = create<MusicStore>((set, get) => {
           };
         }
 
-        const existingIndex = state.queue.findIndex(
-          (s) => s.id === song.id
-        );
-
         return {
           currentSong: song,
-          currentIndex: existingIndex !== -1 ? existingIndex : 0,
-          queue: existingIndex !== -1 ? state.queue : [song],
+          queue: [song],
+          currentIndex: 0,
           progress: 0,
           isPlaying: true,
         };
@@ -155,11 +141,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     playNext: () =>
       set((state) => {
-        if (!state.queue.length) return state;
         if (state.currentIndex + 1 >= state.queue.length) return state;
 
         const nextSong = state.queue[state.currentIndex + 1];
-        saveLastPlayed(nextSong);
+        saveJSON(LAST_PLAYED_KEY, nextSong);
+        saveJSON(PLAYBACK_POSITION_KEY, 0);
 
         return {
           currentIndex: state.currentIndex + 1,
@@ -171,11 +157,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     playPrevious: () =>
       set((state) => {
-        if (!state.queue.length) return state;
         if (state.currentIndex - 1 < 0) return state;
 
         const prevSong = state.queue[state.currentIndex - 1];
-        saveLastPlayed(prevSong);
+        saveJSON(LAST_PLAYED_KEY, prevSong);
+        saveJSON(PLAYBACK_POSITION_KEY, 0);
 
         return {
           currentIndex: state.currentIndex - 1,
@@ -188,55 +174,46 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     togglePlayPause: () =>
       set((state) => ({ isPlaying: !state.isPlaying })),
 
-    setProgress: (progress) => set({ progress }),
+    setProgress: (progress) => {
+      saveJSON(PLAYBACK_POSITION_KEY, progress);
+      set({ progress });
+    },
 
-    /* ===== YOUTUBE CACHE ===== */
+    /* ===== 🎥 YOUTUBE VIDEO CACHE (FIXED) ===== */
 
     setSongVideoId: (songId, videoId) =>
-      set((state) => ({
-        songVideoIds: {
+      set((state) => {
+        const updated = {
           ...state.songVideoIds,
           [songId]: videoId,
-        },
-      })),
+        };
 
-    /* ===== ❤️ LIKE (PERSISTENT) ===== */
+        saveJSON(VIDEO_IDS_KEY, updated);
+
+        return { songVideoIds: updated };
+      }),
+
+    /* ===== ❤️ LIKES ===== */
 
     toggleLike: (song) =>
       set((state) => {
-        const favLib = state.libraries.find(
-          (l) => l.id === "favorites"
-        )!;
+        const favLib = state.libraries[0];
         const isLiked = favLib.songs.some((s) => s.id === song.id);
 
         const updatedSongs = isLiked
           ? favLib.songs.filter((s) => s.id !== song.id)
           : [...favLib.songs, normalizeSong(song)];
 
-        saveFavorites(updatedSongs);
+        saveJSON(FAVORITES_KEY, updatedSongs);
 
         return {
+          libraries: [
+            { ...favLib, songs: updatedSongs },
+          ],
           currentSong:
             state.currentSong?.id === song.id
               ? { ...state.currentSong, isLiked: !isLiked }
               : state.currentSong,
-
-          searchResults: state.searchResults.map((s) =>
-            s.id === song.id ? { ...s, isLiked: !isLiked } : s
-          ),
-
-          moodBlocks: state.moodBlocks.map((block) => ({
-            ...block,
-            songs: block.songs.map((s) =>
-              s.id === song.id ? { ...s, isLiked: !isLiked } : s
-            ),
-          })),
-
-          libraries: state.libraries.map((lib) =>
-            lib.id === "favorites"
-              ? { ...lib, songs: updatedSongs }
-              : lib
-          ),
         };
       }),
 
@@ -246,10 +223,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
 
     performSearch: async () => {
       const query = get().searchQuery.trim();
-      if (!query) {
-        set({ searchResults: [] });
-        return;
-      }
+      if (!query) return set({ searchResults: [] });
 
       try {
         const songs = await searchSpotify(query);
