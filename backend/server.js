@@ -7,22 +7,42 @@ import youtubeRoutes from "./routes/youtube.js";
 
 dotenv.config();
 
+const app = express();
+
+/* =======================
+   🔓 CORS (DEPLOY SAFE)
+   ======================= */
+app.use(
+  cors({
+    origin: "*", // allow all origins for now (we'll restrict later)
+    methods: ["GET", "POST"],
+  })
+);
+
+app.use(express.json());
+
+/* =======================
+   🔍 ENV CHECK (DEBUG)
+   ======================= */
 console.log("SPOTIFY ID:", !!process.env.SPOTIFY_CLIENT_ID);
 console.log("SPOTIFY SECRET:", !!process.env.SPOTIFY_CLIENT_SECRET);
 console.log("YOUTUBE KEY:", !!process.env.YOUTUBE_API_KEY);
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
+/* =======================
+   ✅ ROUTES
+   ======================= */
 app.get("/", (req, res) => {
-  res.send("Luna backend is working 🌙");
+  res.send("LUNA backend is working 🌙");
 });
 
 app.use("/api/spotify", spotifyRoutes);
 app.use("/api/youtube", youtubeRoutes);
 
-app.listen(5000, () => {
-  console.log("🚀 Backend running on http://localhost:5000");
+/* =======================
+   🚀 START SERVER
+   ======================= */
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
