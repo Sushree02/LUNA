@@ -15,6 +15,7 @@ import { LibraryScreen } from "./components/LibraryScreen";
 import { BottomNav } from "./components/BottomNav";
 import { YouTubePlayer } from "./components/YouTubePlayer";
 import { MiniPlayer } from "./components/MiniPlayer";
+import { AskLuna } from "./components/AskLuna"; // ✅ ADD THIS
 
 import { useMusicStore } from "./store/useMusicStore";
 import { getMoodFromWeatherAndTime } from "@/utils/moodEngine";
@@ -32,9 +33,13 @@ function AppRoutes() {
           <Route path="/mood/:mood" element={<SearchResults />} />
           <Route path="/player" element={<PlayerScreen />} />
           <Route path="/library" element={<LibraryScreen />} />
+
+          {/* 🧠 ASK LUNA ROOT */}
+          <Route path="/ask-luna" element={<AskLuna />} />
         </Routes>
       </AnimatePresence>
 
+      {/* Always mounted */}
       <MiniPlayer />
       <BottomNav />
     </>
@@ -45,12 +50,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const { loadMoodBlocks } = useMusicStore();
 
-  /* ✅ EXISTING LOGIC */
+  /* ✅ Load moods */
   useEffect(() => {
     loadMoodBlocks();
   }, [loadMoodBlocks]);
 
-  /* 🌤 WEATHER + TIME → MOOD */
+  /* 🌤 WEATHER + TIME → MOOD (LOGIC ONLY) */
   useEffect(() => {
     async function fetchWeatherMood() {
       const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
@@ -98,6 +103,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* 🔥 Global audio engine */}
       <YouTubePlayer />
 
       <div className="pb-32">

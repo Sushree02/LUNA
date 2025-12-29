@@ -1,4 +1,4 @@
-import { Home, Search, Library } from 'lucide-react';
+import { Home, Search, Library, MessageCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -14,6 +14,7 @@ export function BottomNav() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Search, label: 'Search', path: '/search' },
+    { icon: MessageCircle, label: 'Ask', path: '/ask-luna' }, // ✅ NEW
     { icon: Library, label: 'Library', path: '/library' },
   ];
 
