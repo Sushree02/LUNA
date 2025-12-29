@@ -1,0 +1,20 @@
+{
+  "name": "LUNA",
+  "short_name": "LUNA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0a1e",
+  "theme_color": "#0f0a1e",
+  "icons": [
+    {
+      "src": "/LUNA2.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/LUNA2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
