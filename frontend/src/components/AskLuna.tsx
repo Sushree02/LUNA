@@ -26,42 +26,61 @@ export function AskLuna() {
   ]);
 
   /* =======================
-     🧠 SEND MESSAGE
+     🧠 SEND MESSAGE (REAL AI)
      ======================= */
   async function handleSend() {
     if (!input.trim() || loading) return;
 
-    const userText = input;
+    const userText = input.trim();
     setInput("");
     setLoading(true);
 
+    // show user message immediately
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ai/chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userText }),
-        }
-      );
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      if (!res.ok) throw new Error("AI failed");
+      if (!backendUrl) {
+        throw new Error("Backend URL missing");
+      }
+
+      const res = await fetch(`${backendUrl}/api/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: userText }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`AI request failed (${res.status})`);
+      }
 
       const data = await res.json();
 
+      // 🔒 strict validation (prevents undefined bugs)
       setMessages((prev) => [
         ...prev,
         {
           role: "luna",
-          text: data.text,
-          songs: data.songs,
+          text: data.text ?? "I’m thinking 🌙",
+          songs: Array.isArray(data.songs) ? data.songs : [],
         },
       ]);
-    } catch (err) {
-      // 🔁 fallback (won't break app)
-      setMessages((prev) => [...prev, getLocalFallback(userText)]);
+    } catch (error) {
+      console.error("❌ AskLuna AI error:", error);
+
+      // explicit fallback (you KNOW when Gemini failed)
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "luna",
+          text:
+            "I’m having trouble reaching my brain right now 🌙 Here’s something you might like:",
+          songs: ["Iktara", "Raabta", "Phir Le Aaya Dil"],
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -109,7 +128,7 @@ export function AskLuna() {
                   {msg.text}
                 </div>
 
-                {msg.songs && (
+                {msg.songs && msg.songs.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {msg.songs.map((song) => (
                       <button
@@ -143,39 +162,10 @@ export function AskLuna() {
             disabled={loading}
             className="h-9 px-3 rounded-lg bg-violet-twilight text-xs"
           >
-            {loading ? "…" : "Send"}
+            {loading ? "Thinking…" : "Send"}
           </Button>
         </div>
       </div>
     </div>
   );
-}
-
-/* =======================
-   🔁 FALLBACK AI (SAFE)
-   ======================= */
-function getLocalFallback(text: string): Message {
-  const lower = text.toLowerCase();
-
-  if (lower.includes("sad") || lower.includes("tired")) {
-    return {
-      role: "luna",
-      text: "I’m here for you 💜 Try something soothing:",
-      songs: ["Raabta", "Iktara", "Phir Le Aaya Dil"],
-    };
-  }
-
-  if (lower.includes("happy")) {
-    return {
-      role: "luna",
-      text: "That’s lovely ✨ Keep the vibe:",
-      songs: ["Ilahi", "Udd Gaye", "Gallan Goodiyan"],
-    };
-  }
-
-  return {
-    role: "luna",
-    text: "I think CHILL music fits you right now 🌙",
-    songs: ["Iktara", "Raabta"],
-  };
 }
