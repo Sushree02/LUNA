@@ -17,8 +17,9 @@ import { YouTubePlayer } from "./components/YouTubePlayer";
 import { MiniPlayer } from "./components/MiniPlayer";
 
 import { useMusicStore } from "./store/useMusicStore";
+import { getMoodFromWeatherAndTime } from "@/utils/moodEngine";
 
-/* 🔁 ROUTES WRAPPER (IMPORTANT) */
+/* 🔁 ROUTES WRAPPER */
 function AppRoutes() {
   const location = useLocation();
 
@@ -34,9 +35,7 @@ function AppRoutes() {
         </Routes>
       </AnimatePresence>
 
-      {/* 🎵 Mini player (outside routes, always mounted) */}
       <MiniPlayer />
-
       <BottomNav />
     </>
   );
@@ -46,9 +45,52 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const { loadMoodBlocks } = useMusicStore();
 
+  /* ✅ EXISTING LOGIC */
   useEffect(() => {
     loadMoodBlocks();
   }, [loadMoodBlocks]);
+
+  /* 🌤 WEATHER + TIME → MOOD */
+  useEffect(() => {
+    async function fetchWeatherMood() {
+      const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+
+      if (!API_KEY) {
+        console.warn("⚠️ Weather API key missing");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=Delhi&units=metric&appid=${API_KEY}`
+        );
+
+        if (!res.ok) {
+          throw new Error(`Weather API failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        const weatherMain: string | undefined =
+          data.weather?.[0]?.main;
+
+        const hour = new Date().getHours();
+
+        const mood = getMoodFromWeatherAndTime(
+          weatherMain ?? "Clear",
+          hour
+        );
+
+        console.log("🌤 Weather:", weatherMain);
+        console.log("🕒 Hour:", hour);
+        console.log("🎵 Auto Mood:", mood);
+      } catch (err) {
+        console.error("❌ Weather fetch failed", err);
+      }
+    }
+
+    fetchWeatherMood();
+  }, []);
 
   if (isLoading) {
     return <LoadingScreen onLoadComplete={() => setIsLoading(false)} />;
@@ -56,7 +98,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* 🔥 YouTube audio engine (mount ONCE) */}
       <YouTubePlayer />
 
       <div className="pb-32">

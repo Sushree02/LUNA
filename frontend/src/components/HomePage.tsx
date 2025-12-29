@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Search, Headphones } from 'lucide-react';
-import { MoodBlock } from './MoodBlock';
-import { StarField } from './StarField';
-import { useMusicStore } from '@/store/useMusicStore';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Search, Headphones } from "lucide-react";
+import { MoodBlock } from "./MoodBlock";
+import { StarField } from "./StarField";
+import { SmartSuggestionBar } from "./SmartSuggestionBar";
+import { useMusicStore } from "@/store/useMusicStore";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export function HomePage() {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState("");
   const { moodBlocks, setSearchQuery } = useMusicStore();
   const navigate = useNavigate();
 
@@ -17,7 +18,7 @@ export function HomePage() {
     setSearchQuery(value);
 
     if (value.trim()) {
-      navigate('/search');
+      navigate("/search");
     }
   };
 
@@ -53,7 +54,7 @@ export function HomePage() {
 
         {/* Illustration */}
         <motion.div
-          className="flex flex-col items-center mb-12"
+          className="flex flex-col items-center mb-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
@@ -65,9 +66,13 @@ export function HomePage() {
           </p>
         </motion.div>
 
+        {/* 🌤 Smart Suggestion Bar */}
+        <SmartSuggestionBar />
+
         {/* Mood Blocks */}
         <motion.div>
           <h2 className="heading-lg text-periwinkle mb-4">Moods</h2>
+
           <div className="grid grid-cols-2 gap-4">
             {moodBlocks.map((block, index) => (
               <motion.div
@@ -79,7 +84,7 @@ export function HomePage() {
                 <MoodBlock
                   moodBlock={block}
                   onSelect={() => {
-                    setSearchQuery('');
+                    setSearchQuery("");
                     navigate(`/mood/${block.mood}`);
                   }}
                 />
