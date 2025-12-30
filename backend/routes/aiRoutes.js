@@ -10,39 +10,16 @@ router.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Message is required" });
   }
 
-  const msg = message.toLowerCase();
-
-  // ✅ SIMPLE MOOD FALLBACK (ALWAYS WORKS)
-  let mood = "calm";
-  if (msg.includes("sad") || msg.includes("bad") || msg.includes("not good")) {
-    mood = "sad";
-  } else if (msg.includes("happy") || msg.includes("good") || msg.includes("great")) {
-    mood = "happy";
-  }
-
-  const fallbackSongs = {
-    sad: ["Khairiyat", "Agar Tum Saath Ho", "Phir Le Aaya Dil"],
-    happy: ["Ilahi", "Zinda", "Safarnama"],
-    calm: ["Kun Faya Kun", "Iktara", "Raabta"],
-  };
-
   try {
-    const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY missing");
-
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: `User feeling: "${message}". Respond kindly and suggest 3 songs.`,
-                },
-              ],
+              parts: [{ text: message }],
             },
           ],
         }),
@@ -51,21 +28,16 @@ router.post("/chat", async (req, res) => {
 
     const data = await response.json();
 
-    const text =
+    console.log("GEMINI RAW:", JSON.stringify(data, null, 2));
+
+    const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      `I sense a ${mood} mood 🌙`;
+      "Gemini returned no text";
 
-    return res.json({
-      text,
-      songs: fallbackSongs[mood],
-    });
+    res.json({ text: reply });
   } catch (err) {
-    console.error("Gemini failed, using fallback");
-
-    return res.json({
-      text: `I sense a ${mood} mood 🌙`,
-      songs: fallbackSongs[mood],
-    });
+    console.error("Gemini ERROR:", err);
+    res.status(500).json({ error: "Gemini failed" });
   }
 });
 
