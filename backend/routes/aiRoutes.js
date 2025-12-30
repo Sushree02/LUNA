@@ -1,11 +1,8 @@
 import express from "express";
+import fetch from "node-fetch"; // ✅ REQUIRED
 
 const router = express.Router();
 
-/*
-POST /api/ai/chat
-Body: { message: string }
-*/
 router.post("/chat", async (req, res) => {
   const { message } = req.body;
 
@@ -28,12 +25,11 @@ router.post("/chat", async (req, res) => {
               parts: [
                 {
                   text: `
-You are Luna, a friendly music assistant.
+You are Luna, a music assistant.
 
 User feeling: "${message}"
 
-Respond naturally.
-Also recommend 3 suitable song titles.
+Reply naturally and recommend 3 song titles.
                   `,
                 },
               ],
@@ -46,34 +42,22 @@ Also recommend 3 suitable song titles.
     const data = await response.json();
 
     const raw =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    // ✅ SAFE PARSING (this fixes your bug)
-    let replyText =
-      raw.match(/reply:\s*(.*)/i)?.[1] ||
-      raw.split("\n")[0] ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "I’m here with you 🌙";
 
-    let songs = raw
-      .replace(/reply:.*$/im, "")
-      .replace(/songs:/i, "")
+    const songs = raw
       .split(/[\n,-]/)
       .map((s) => s.trim())
       .filter((s) => s.length > 2)
       .slice(0, 3);
 
-    if (!songs.length) {
-      songs = ["Iktara", "Raabta", "Phir Le Aaya Dil"];
-    }
-
     res.json({
-      text: replyText,
-      songs,
+      text: raw.split("\n")[0],
+      songs: songs.length ? songs : ["Iktara", "Raabta", "Phir Le Aaya Dil"],
     });
   } catch (err) {
-    console.error("Gemini error:", err.message);
+    console.error("Gemini error:", err);
 
-    // 🛟 fallback (never breaks frontend)
     res.json({
       text: "I’m here for you 🌙",
       songs: ["Iktara", "Raabta", "Phir Le Aaya Dil"],
