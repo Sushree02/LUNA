@@ -1,5 +1,5 @@
 import express from "express";
-import fetch from "node-fetch"; // ✅ REQUIRED
+import fetch from "node-fetch";
 
 const router = express.Router();
 
@@ -15,22 +15,23 @@ router.post("/chat", async (req, res) => {
     if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY missing");
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [
                 {
-                  text: `
-You are Luna, a music assistant.
+                  text: `You are Luna, a music assistant.
 
 User feeling: "${message}"
 
-Reply naturally and recommend 3 song titles.
-                  `,
+Respond with:
+- One friendly sentence
+- Then list 3 song titles (comma separated)`,
                 },
               ],
             },
@@ -41,25 +42,40 @@ Reply naturally and recommend 3 song titles.
 
     const data = await response.json();
 
-    const raw =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I’m here with you 🌙";
+    console.log("🔮 Gemini RAW:", JSON.stringify(data, null, 2));
 
-    const songs = raw
-      .split(/[\n,-]/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 2)
-      .slice(0, 3);
+    const textPart =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .join(" ")
+        .trim();
+
+    if (!textPart) {
+      throw new Error("Empty Gemini response");
+    }
+
+    const lines = textPart.split("\n");
+
+    const replyText = lines[0];
+
+    const songs =
+      textPart
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 2)
+        .slice(0, 3) || [];
 
     res.json({
-      text: raw.split("\n")[0],
-      songs: songs.length ? songs : ["Iktara", "Raabta", "Phir Le Aaya Dil"],
+      text: replyText,
+      songs: songs.length
+        ? songs
+        : ["Iktara", "Raabta", "Phir Le Aaya Dil"],
     });
   } catch (err) {
-    console.error("Gemini error:", err);
+    console.error("❌ Gemini error:", err.message);
 
     res.json({
-      text: "I’m here for you 🌙",
+      text: "I’m here with you 🌙",
       songs: ["Iktara", "Raabta", "Phir Le Aaya Dil"],
     });
   }
