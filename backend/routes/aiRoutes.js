@@ -25,13 +25,10 @@ router.post("/chat", async (req, res) => {
               role: "user",
               parts: [
                 {
-                  text: `You are Luna, a music assistant.
+                  text: `Classify the user's mood in ONE word only:
+happy, sad, calm, energetic, romantic
 
-User feeling: "${message}"
-
-Respond with:
-- One friendly sentence
-- Then list 3 song titles (comma separated)`,
+User message: "${message}"`,
                 },
               ],
             },
@@ -42,37 +39,26 @@ Respond with:
 
     const data = await response.json();
 
-    console.log("🔮 Gemini RAW:", JSON.stringify(data, null, 2));
+    const mood =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text
+        ?.toLowerCase()
+        .trim() || "calm";
 
-    const textPart =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text)
-        .join(" ")
-        .trim();
-
-    if (!textPart) {
-      throw new Error("Empty Gemini response");
-    }
-
-    const lines = textPart.split("\n");
-
-    const replyText = lines[0];
-
-    const songs =
-      textPart
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 2)
-        .slice(0, 3) || [];
+    // 🎵 Controlled song mapping (NO AI parsing)
+    const moodSongs = {
+      happy: ["Ilahi", "Zinda", "Safarnama"],
+      sad: ["Iktara", "Raabta", "Phir Le Aaya Dil"],
+      calm: ["Kun Faya Kun", "Agar Tum Saath Ho", "Khairiyat"],
+      energetic: ["Apna Time Aayega", "Malang", "Zinda"],
+      romantic: ["Tum Hi Ho", "Raabta", "Kesariya"],
+    };
 
     res.json({
-      text: replyText,
-      songs: songs.length
-        ? songs
-        : ["Iktara", "Raabta", "Phir Le Aaya Dil"],
+      text: `I sense a ${mood} mood 🌙`,
+      songs: moodSongs[mood] || moodSongs.calm,
     });
   } catch (err) {
-    console.error("❌ Gemini error:", err.message);
+    console.error("Gemini error:", err.message);
 
     res.json({
       text: "I’m here with you 🌙",
