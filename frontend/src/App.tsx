@@ -45,38 +45,24 @@ function AppRoutes() {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-
   const { loadMoodBlocks, setWeather } = useMusicStore();
 
-  /* ✅ LOAD MOODS ONCE */
+  /* ✅ LOAD MOODS */
   useEffect(() => {
     loadMoodBlocks();
   }, [loadMoodBlocks]);
 
-  /* 🌍 WEATHER + LOCATION + AUTO REFRESH */
+  /* 🌍 WEATHER + CITY + LOCATION */
   useEffect(() => {
     const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
     if (!API_KEY) return;
 
     let intervalId: number;
 
-    const fetchByCoords = async (lat: number, lon: number) => {
-      const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
-      );
-      return res.json();
-    };
-
-    const fetchByCity = async (city: string) => {
-      const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`
-      );
-      return res.json();
-    };
-
     const applyWeather = (data: any) => {
       const weatherMain = data.weather?.[0]?.main ?? "Clear";
       const temp = Math.round(data.main?.temp ?? 0);
+      const city = data.name ?? "Unknown location";
 
       const hour = new Date().getHours();
 
@@ -94,43 +80,42 @@ function App() {
       setWeather(
         mood,
         `${weatherMain} · ${temp}°C`,
-        timeLabel
+        timeLabel,
+        city
       );
     };
 
-    const resolveWeather = async () => {
-      try {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-              const data = await fetchByCoords(
-                pos.coords.latitude,
-                pos.coords.longitude
-              );
-              applyWeather(data);
-            },
-            async () => {
-              const data = await fetchByCity("Delhi");
-              applyWeather(data);
-            }
-          );
-        } else {
-          const data = await fetchByCity("Delhi");
-          applyWeather(data);
-        }
-      } catch {
-        // silent fail
+    const fetchByCoords = async (lat: number, lon: number) => {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
+      );
+      applyWeather(await res.json());
+    };
+
+    const fetchByCity = async () => {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=Delhi&units=metric&appid=${API_KEY}`
+      );
+      applyWeather(await res.json());
+    };
+
+    const resolveWeather = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) =>
+            fetchByCoords(
+              pos.coords.latitude,
+              pos.coords.longitude
+            ),
+          fetchByCity
+        );
+      } else {
+        fetchByCity();
       }
     };
 
-    /* 🔥 FIRST LOAD */
     resolveWeather();
-
-    /* ⏱ AUTO REFRESH EVERY 30 MINUTES */
-    intervalId = window.setInterval(
-      resolveWeather,
-      30 * 60 * 1000
-    );
+    intervalId = window.setInterval(resolveWeather, 30 * 60 * 1000);
 
     return () => clearInterval(intervalId);
   }, [setWeather]);

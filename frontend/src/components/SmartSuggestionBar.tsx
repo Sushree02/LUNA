@@ -4,12 +4,7 @@ import { useMusicStore } from "@/store/useMusicStore";
 
 export function SmartSuggestionBar() {
   const navigate = useNavigate();
-
-  /* ✅ GET REAL DATA FROM STORE */
-  const { weatherMood, weatherText, timeLabel } = useMusicStore();
-
-  /* Fallback safety */
-  if (!weatherText || !timeLabel) return null;
+  const { weatherMood, weatherText, timeLabel, city } = useMusicStore();
 
   return (
     <motion.div
@@ -20,8 +15,7 @@ export function SmartSuggestionBar() {
       whileTap={{ scale: 0.98 }}
       onClick={() => navigate(`/mood/${weatherMood}`)}
       className="
-        mx-4 mb-6
-        cursor-pointer
+        mx-4 mb-6 cursor-pointer
         rounded-2xl
         bg-gradient-to-r from-blue-500/20 to-indigo-500/20
         backdrop-blur-xl
@@ -35,14 +29,16 @@ export function SmartSuggestionBar() {
         animate={{ y: [0, -2, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       >
-        {/* Left */}
+        {/* LEFT */}
         <div>
           <p className="text-sm text-white/70">
             {timeLabel} · {weatherText}
           </p>
 
           <p className="text-base font-medium text-white">
-            Perfect time for{" "}
+            {city
+              ? `In ${city}, try`
+              : "Perfect time for"}{" "}
             <span className="text-blue-300">
               {weatherMood.toUpperCase()}
             </span>{" "}
@@ -50,17 +46,17 @@ export function SmartSuggestionBar() {
           </p>
 
           <p className="text-xs text-white/50 mt-1">
-            Soft skies, softer sounds — take it slow ✨
+            Let the weather set the vibe ✨
           </p>
         </div>
 
-        {/* Right icon */}
+        {/* ICON */}
         <motion.div
           className="text-2xl"
           animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 4, repeat: Infinity }}
         >
-          🌥️
+          🌦️
         </motion.div>
       </motion.div>
     </motion.div>

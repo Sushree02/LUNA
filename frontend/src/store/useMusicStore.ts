@@ -65,11 +65,13 @@ interface MusicStore {
   weatherMood: WeatherMood;
   weatherText: string;
   timeLabel: string;
+  city: string;
 
   setWeather: (
     mood: WeatherMood,
     weatherText: string,
-    timeLabel: string
+    timeLabel: string,
+    city: string
   ) => void;
 
   /* ACTIONS */
@@ -118,6 +120,8 @@ export const useMusicStore = create<MusicStore>((set, get) => {
   };
 
   return {
+    /* ===== STATE ===== */
+
     currentSong: lastPlayed,
     isPlaying: false,
     progress: savedProgress,
@@ -140,15 +144,16 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     weatherMood: "chill",
     weatherText: "Loading weather…",
     timeLabel: "",
+    city: "",
 
-    setWeather: (mood, weatherText, timeLabel) =>
-      set({ weatherMood: mood, weatherText, timeLabel }),
+    setWeather: (mood, weatherText, timeLabel, city) =>
+      set({ weatherMood: mood, weatherText, timeLabel, city }),
 
-    /* PLAYER */
+    /* ===== PLAYER ===== */
+
     setCurrentSong: (song, queue, index) => {
       saveJSON(LAST_PLAYED_KEY, song);
       saveJSON(PLAYBACK_POSITION_KEY, 0);
-
       set({
         currentSong: song,
         queue: queue ?? [song],
