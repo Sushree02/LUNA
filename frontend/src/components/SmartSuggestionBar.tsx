@@ -1,24 +1,24 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useMusicStore } from "@/store/useMusicStore";
 
 export function SmartSuggestionBar() {
   const navigate = useNavigate();
 
-  // TEMP values (UI-only)
-  const weatherText = "Cloudy · 22°C";
-  const timeLabel = "Evening";
-  const suggestedMood = "CHILL";
+  /* ✅ GET REAL DATA FROM STORE */
+  const { weatherMood, weatherText, timeLabel } = useMusicStore();
+
+  /* Fallback safety */
+  if (!weatherText || !timeLabel) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-
-      onClick={() => navigate(`/mood/${suggestedMood.toLowerCase()}`)}
+      onClick={() => navigate(`/mood/${weatherMood}`)}
       className="
         mx-4 mb-6
         cursor-pointer
@@ -43,10 +43,12 @@ export function SmartSuggestionBar() {
 
           <p className="text-base font-medium text-white">
             Perfect time for{" "}
-            <span className="text-blue-300">{suggestedMood}</span> music 🎧
+            <span className="text-blue-300">
+              {weatherMood.toUpperCase()}
+            </span>{" "}
+            music 🎧
           </p>
 
-          {/* Cozy quote */}
           <p className="text-xs text-white/50 mt-1">
             Soft skies, softer sounds — take it slow ✨
           </p>

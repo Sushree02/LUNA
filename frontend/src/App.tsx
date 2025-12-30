@@ -15,12 +15,12 @@ import { LibraryScreen } from "./components/LibraryScreen";
 import { BottomNav } from "./components/BottomNav";
 import { YouTubePlayer } from "./components/YouTubePlayer";
 import { MiniPlayer } from "./components/MiniPlayer";
-import { AskLuna } from "./components/AskLuna"; // ✅ ADD THIS
+import { AskLuna } from "./components/AskLuna";
 
 import { useMusicStore } from "./store/useMusicStore";
 import { getMoodFromWeatherAndTime } from "@/utils/moodEngine";
 
-/* 🔁 ROUTES WRAPPER */
+/* 🔁 ROUTES */
 function AppRoutes() {
   const location = useLocation();
 
@@ -33,13 +33,10 @@ function AppRoutes() {
           <Route path="/mood/:mood" element={<SearchResults />} />
           <Route path="/player" element={<PlayerScreen />} />
           <Route path="/library" element={<LibraryScreen />} />
-
-          {/* 🧠 ASK LUNA ROOT */}
           <Route path="/ask-luna" element={<AskLuna />} />
         </Routes>
       </AnimatePresence>
 
-      {/* Always mounted */}
       <MiniPlayer />
       <BottomNav />
     </>
@@ -48,54 +45,95 @@ function AppRoutes() {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const { loadMoodBlocks } = useMusicStore();
 
-  /* ✅ Load moods */
+  const { loadMoodBlocks, setWeather } = useMusicStore();
+
+  /* ✅ LOAD MOODS ONCE */
   useEffect(() => {
     loadMoodBlocks();
   }, [loadMoodBlocks]);
 
-  /* 🌤 WEATHER + TIME → MOOD (LOGIC ONLY) */
+  /* 🌍 WEATHER + LOCATION + AUTO REFRESH */
   useEffect(() => {
-    async function fetchWeatherMood() {
-      const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+    const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+    if (!API_KEY) return;
 
-      if (!API_KEY) {
-        console.warn("⚠️ Weather API key missing");
-        return;
-      }
+    let intervalId: number;
 
+    const fetchByCoords = async (lat: number, lon: number) => {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
+      );
+      return res.json();
+    };
+
+    const fetchByCity = async (city: string) => {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`
+      );
+      return res.json();
+    };
+
+    const applyWeather = (data: any) => {
+      const weatherMain = data.weather?.[0]?.main ?? "Clear";
+      const temp = Math.round(data.main?.temp ?? 0);
+
+      const hour = new Date().getHours();
+
+      const timeLabel =
+        hour >= 22 || hour < 5
+          ? "Night"
+          : hour < 12
+          ? "Morning"
+          : hour < 17
+          ? "Afternoon"
+          : "Evening";
+
+      const mood = getMoodFromWeatherAndTime(weatherMain, hour);
+
+      setWeather(
+        mood,
+        `${weatherMain} · ${temp}°C`,
+        timeLabel
+      );
+    };
+
+    const resolveWeather = async () => {
       try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=Delhi&units=metric&appid=${API_KEY}`
-        );
-
-        if (!res.ok) {
-          throw new Error(`Weather API failed: ${res.status}`);
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const data = await fetchByCoords(
+                pos.coords.latitude,
+                pos.coords.longitude
+              );
+              applyWeather(data);
+            },
+            async () => {
+              const data = await fetchByCity("Delhi");
+              applyWeather(data);
+            }
+          );
+        } else {
+          const data = await fetchByCity("Delhi");
+          applyWeather(data);
         }
-
-        const data = await res.json();
-
-        const weatherMain: string | undefined =
-          data.weather?.[0]?.main;
-
-        const hour = new Date().getHours();
-
-        const mood = getMoodFromWeatherAndTime(
-          weatherMain ?? "Clear",
-          hour
-        );
-
-        console.log("🌤 Weather:", weatherMain);
-        console.log("🕒 Hour:", hour);
-        console.log("🎵 Auto Mood:", mood);
-      } catch (err) {
-        console.error("❌ Weather fetch failed", err);
+      } catch {
+        // silent fail
       }
-    }
+    };
 
-    fetchWeatherMood();
-  }, []);
+    /* 🔥 FIRST LOAD */
+    resolveWeather();
+
+    /* ⏱ AUTO REFRESH EVERY 30 MINUTES */
+    intervalId = window.setInterval(
+      resolveWeather,
+      30 * 60 * 1000
+    );
+
+    return () => clearInterval(intervalId);
+  }, [setWeather]);
 
   if (isLoading) {
     return <LoadingScreen onLoadComplete={() => setIsLoading(false)} />;
@@ -103,9 +141,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* 🔥 Global audio engine */}
       <YouTubePlayer />
-
       <div className="pb-32">
         <AppRoutes />
       </div>
