@@ -164,7 +164,7 @@ Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/luna-music-player.git
-cd luna-music-player
+cd luna-music
 ```
 
 Install Dependencies
