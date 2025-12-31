@@ -113,7 +113,7 @@ This makes the app **context-aware**, not static.
 * **Framer Motion** (animations)
 * **Vite**
 
-##Backend
+### Backend
 * **Node.js**
 * **express.js**
 
@@ -149,6 +149,7 @@ Each part works together to deliver a **smooth and intelligent experience**.
 ![1](https://github.com/user-attachments/assets/f50eb195-bc1c-4a4f-9d69-8ef6a28a9509)
 ![2](https://github.com/user-attachments/assets/8c7c6fdf-b824-423f-92a2-fd360124427e)
 ![3](https://github.com/user-attachments/assets/51088512-13de-41e6-9a0d-f8f954a39d4a)
+![12](https://github.com/user-attachments/assets/f5a0490b-8186-407a-9387-e929ce8d7d09)
 ![4](https://github.com/user-attachments/assets/35573a78-1e16-49c2-9d43-f839a8f9538d)
 ![5](https://github.com/user-attachments/assets/948c9309-b289-43e5-bbb8-dbaed1d395d0)
 ![6](https://github.com/user-attachments/assets/191c9ae9-2e86-4595-9f6e-f4eed24d7c0a)
