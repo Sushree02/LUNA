@@ -16,7 +16,7 @@ LUNA is not just about playing songs — it’s about **context-aware music disc
 * 🎭 Mood-driven UI
 * 🌦 Weather-aware suggestions
 * 🎧 Real music playback
-* 💎 Smooth, modern interface
+* 💎 Smooth, modern interface.
 
 🌟 Features
 
