@@ -113,11 +113,16 @@ This makes the app **context-aware**, not static.
 * **Framer Motion** (animations)
 * **Vite**
 
+##Backend
+* **Node.js**
+* **express.js**
+
 ### APIs & Services
 
 * **Spotify API** — real music metadata
 * **YouTube IFrame & YouTube Data API** — real audio playback
 * **OpenWeather API** — live weather data
+* postman to check 
 
 ---
 
