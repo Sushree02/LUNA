@@ -38,7 +38,7 @@ export type WeatherMood =
   | "dark";
 
 interface MusicStore {
-  /* 🎵 PLAYER */
+  /* ===== PLAYER ===== */
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
@@ -49,32 +49,32 @@ interface MusicStore {
   songVideoIds: Record<string, string>;
   setSongVideoId: (songId: string, videoId: string) => void;
 
-  /* 📚 LIBRARY */
+  /* ===== LIBRARY ===== */
   libraries: Library[];
   currentLibrary: Library | null;
 
-  /* 🔍 SEARCH */
+  /* ===== SEARCH ===== */
   searchQuery: string;
   searchResults: Song[];
 
-  /* 🎭 MOODS */
+  /* ===== MOODS ===== */
   moodBlocks: MoodBlock[];
   isLoading: boolean;
 
-  /* 🌤 WEATHER + TIME (USED BY HOME + LUNA) */
+  /* ===== WEATHER (KEPT FOR FUTURE USE) ===== */
   weatherMood: WeatherMood;
   weatherText: string;
   timeLabel: string;
-  cityName: string;
+  city: string;
 
   setWeather: (
     mood: WeatherMood,
     weatherText: string,
     timeLabel: string,
-    cityName: string
+    city: string
   ) => void;
 
-  /* 🎧 ACTIONS */
+  /* ===== ACTIONS ===== */
   setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
   playNext: () => void;
   playPrevious: () => void;
@@ -140,20 +140,15 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     moodBlocks: [],
     isLoading: false,
 
-    /* 🌤 WEATHER DEFAULTS */
-    weatherMood: "chill",
-    weatherText: "Loading weather…",
-    timeLabel: "",
-    cityName: "",
+    /* ===== WEATHER (SAFE DEFAULTS) ===== */
 
-    /* 🌤 WEATHER SETTER (USED BY App.tsx) */
-    setWeather: (mood, weatherText, timeLabel, cityName) =>
-      set({
-        weatherMood: mood,
-        weatherText,
-        timeLabel,
-        cityName,
-      }),
+    weatherMood: "chill",
+    weatherText: "",
+    timeLabel: "",
+    city: "",
+
+    setWeather: (weatherMood, weatherText, timeLabel, city) =>
+      set({ weatherMood, weatherText, timeLabel, city }),
 
     /* ===== PLAYER ===== */
 
@@ -173,11 +168,9 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     playNext: () =>
       set((state) => {
         if (state.currentIndex + 1 >= state.queue.length) return state;
-
         const nextSong = state.queue[state.currentIndex + 1];
         saveJSON(LAST_PLAYED_KEY, nextSong);
         saveJSON(PLAYBACK_POSITION_KEY, 0);
-
         return {
           currentIndex: state.currentIndex + 1,
           currentSong: nextSong,
@@ -189,11 +182,9 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     playPrevious: () =>
       set((state) => {
         if (state.currentIndex - 1 < 0) return state;
-
         const prevSong = state.queue[state.currentIndex - 1];
         saveJSON(LAST_PLAYED_KEY, prevSong);
         saveJSON(PLAYBACK_POSITION_KEY, 0);
-
         return {
           currentIndex: state.currentIndex - 1,
           currentSong: prevSong,
@@ -210,8 +201,6 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       set({ progress });
     },
 
-    /* ===== 🎥 YOUTUBE CACHE ===== */
-
     setSongVideoId: (songId, videoId) =>
       set((state) => {
         const updated = { ...state.songVideoIds, [songId]: videoId };
@@ -219,7 +208,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         return { songVideoIds: updated };
       }),
 
-    /* ===== ❤️ LIKES ===== */
+    /* ===== LIKES ===== */
 
     toggleLike: (song) =>
       set((state) => {
