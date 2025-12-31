@@ -217,7 +217,7 @@ This is **well above a basic music app**.
 🔗 Live Demo
 
 🚀 **Deployed Application:**  
-👉 https://luna-two-gamma.vercel.app/library
+👉 https://luna-two-gamma.vercel.app/
 👉 https://luna-frontend-hvrf.onrender.com
 
 ---
