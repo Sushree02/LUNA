@@ -163,7 +163,7 @@ Each part works together to deliver a **smooth and intelligent experience**.
 Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/luna-music-player.git
+git clone : https://github.com/your-username/luna-music-player.git
 cd luna-music
 ```
 
