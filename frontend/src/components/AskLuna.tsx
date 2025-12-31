@@ -1,171 +1,187 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Music } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMusicStore } from "@/store/useMusicStore";
 
-type Message = {
-  role: "user" | "luna";
-  text: string;
-  songs?: string[];
+type Mood = "happy" | "sad" | "angry" | "calm" | "neutral";
+
+type MoodConfig = {
+  gradients: string;
+  emoji: string;
+  replies: string[];
+  songSets: string[][];
 };
+
+const MOODS: Record<Mood, MoodConfig> = {
+  happy: {
+    gradients: "from-yellow-400 to-pink-500",
+    emoji: "😄",
+    replies: [
+      "That’s amazing 💛 I’m really happy for you!",
+      "Love that energy ✨ let’s keep it flowing",
+      "Yay! That’s wonderful to hear 😄",
+    ],
+    songSets: [
+      ["Ilahi", "Udd Gaye", "Happy"],
+      ["Love You Zindagi", "Good Life", "On Top of the World"],
+    ],
+  },
+
+  sad: {
+    gradients: "from-blue-600 to-indigo-700",
+    emoji: "🌧️",
+    replies: [
+      "I’m here with you 💙 take it one step at a time",
+      "It’s okay to feel this way 🌙 music can help",
+      "You don’t have to be strong all the time 🤍",
+    ],
+    songSets: [
+      ["Khairiyat", "Agar Tum Saath Ho", "Fix You"],
+      ["Let Her Go", "Someone Like You", "Channa Mereya"],
+    ],
+  },
+
+  angry: {
+    gradients: "from-red-500 to-orange-600",
+    emoji: "😤",
+    replies: [
+      "Let it out 🔥 music can release that tension",
+      "I feel that frustration — let’s channel it",
+      "Take a breath, we’ll calm this storm together",
+    ],
+    songSets: [
+      ["Believer", "Zinda", "Lose Yourself"],
+      ["Thunder", "Apna Time Aayega", "Hallabol"],
+    ],
+  },
+
+  calm: {
+    gradients: "from-teal-400 to-blue-500",
+    emoji: "🌿",
+    replies: [
+      "Peace suits you 🌙 stay here for a while",
+      "That calm energy feels nice ✨",
+      "Slow moments can be powerful too",
+    ],
+    songSets: [
+      ["Kun Faya Kun", "Iktara", "River"],
+      ["Weightless", "Cold Little Heart", "Ocean Eyes"],
+    ],
+  },
+
+  neutral: {
+    gradients: "from-purple-500 to-indigo-600",
+    emoji: "✨",
+    replies: [
+      "Tell me a little more 🌸",
+      "I’m listening 🎧",
+      "What’s been on your mind lately?",
+    ],
+    songSets: [
+      ["Night Changes", "Yellow", "Let Her Go"],
+      ["Perfect", "Photograph", "Say You Won’t Let Go"],
+    ],
+  },
+};
+
+/* 🔍 Mood Detection */
+function detectMood(text: string): Mood {
+  const t = text.toLowerCase();
+
+  if (["sad", "lonely", "cry", "tired", "broken"].some(w => t.includes(w)))
+    return "sad";
+  if (["happy", "good", "great", "excited", "love"].some(w => t.includes(w)))
+    return "happy";
+  if (["angry", "mad", "frustrated"].some(w => t.includes(w)))
+    return "angry";
+  if (["calm", "relaxed", "peace"].some(w => t.includes(w)))
+    return "calm";
+
+  return "neutral";
+}
+
+/* 🎲 Random helper */
+const randomItem = <T,>(arr: T[]) =>
+  arr[Math.floor(Math.random() * arr.length)];
 
 export function AskLuna() {
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [mood, setMood] = useState<Mood>("neutral");
+  const [reply, setReply] = useState<string>(
+    randomItem(MOODS.neutral.replies)
+  );
+  const [songs, setSongs] = useState<string[]>(
+    randomItem(MOODS.neutral.songSets)
+  );
+
   const navigate = useNavigate();
-  const { setSearchQuery } = useMusicStore();
+  const config = MOODS[mood];
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "luna",
-      text: "Hi 🌙 I’m Luna. How are you feeling today?",
-    },
-  ]);
+  const handleSend = () => {
+    if (!input.trim()) return;
 
-  /* =======================
-     🧠 SEND MESSAGE (REAL AI)
-     ======================= */
-  async function handleSend() {
-    if (!input.trim() || loading) return;
+    const detectedMood = detectMood(input);
+    const moodData = MOODS[detectedMood];
 
-    const userText = input.trim();
+    setMood(detectedMood);
+    setReply(randomItem(moodData.replies));
+    setSongs(randomItem(moodData.songSets));
     setInput("");
-    setLoading(true);
-
-    // show user message immediately
-    setMessages((prev) => [...prev, { role: "user", text: userText }]);
-
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-      if (!backendUrl) {
-        throw new Error("Backend URL missing");
-      }
-
-      const res = await fetch(`${backendUrl}/api/ai/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: userText }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`AI request failed (${res.status})`);
-      }
-
-      const data = await res.json();
-
-      // 🔒 strict validation (prevents undefined bugs)
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "luna",
-          text: data.text ?? "I’m thinking 🌙",
-          songs: Array.isArray(data.songs) ? data.songs : [],
-        },
-      ]);
-    } catch (error) {
-      console.error("❌ AskLuna AI error:", error);
-
-      // explicit fallback (you KNOW when Gemini failed)
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "luna",
-          text:
-            "I’m having trouble reaching my brain right now 🌙 Here’s something you might like:",
-          songs: ["Iktara", "Raabta", "Phir Le Aaya Dil"],
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleSongClick(song: string) {
-    setSearchQuery(song);
-    navigate("/search");
-  }
+  };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/40 to-violet-900/40" />
-
-      <div className="relative z-10 max-w-md mx-auto px-3 pt-2 pb-2 flex flex-col h-screen">
-        {/* Header */}
-        <div className="text-center mb-1">
-          <h1 className="text-base font-semibold text-periwinkle flex items-center justify-center gap-1">
-            Ask Luna <Sparkles size={14} />
-          </h1>
-          <p className="text-[11px] text-lavender">
-            Tell me how you feel 🎧
-          </p>
-        </div>
-
-        {/* Chat */}
-        <div className="flex-1 overflow-y-auto space-y-2 pb-1">
-          {messages.map((msg, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${
-                msg.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div className="max-w-[80%]">
-                <div
-                  className={`px-3 py-2 rounded-xl text-xs leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-violet-twilight text-white rounded-br-sm"
-                      : "bg-white/10 text-lavender rounded-bl-sm"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-
-                {msg.songs && msg.songs.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {msg.songs.map((song) => (
-                      <button
-                        key={song}
-                        onClick={() => handleSongClick(song)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs text-white transition"
-                      >
-                        <Music size={14} className="text-blue-300" />
-                        <span className="truncate">{song}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div className="flex gap-1 pt-1">
-          <Input
-            placeholder="How are you feeling?"
-            value={input}
-            disabled={loading}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            className="glass-card rounded-lg text-xs h-9"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={loading}
-            className="h-9 px-3 rounded-lg bg-violet-twilight text-xs"
-          >
-            {loading ? "Thinking…" : "Send"}
-          </Button>
-        </div>
+    <motion.div
+      className={`min-h-screen px-4 pt-10 pb-28 bg-gradient-to-br ${config.gradients}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      {/* Header */}
+      <div className="text-center mb-6 text-white">
+        <h1 className="text-xl font-semibold">
+          Ask Luna {config.emoji}
+        </h1>
+        <p className="text-sm opacity-80">Tell me how you feel</p>
       </div>
-    </div>
+
+      {/* Reply Bubble */}
+      <motion.div
+        className="bg-white/20 text-white rounded-xl px-4 py-3 mb-6 max-w-xs mx-auto text-sm"
+        key={reply}
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        {reply}
+      </motion.div>
+
+      {/* Song Suggestions */}
+      <div className="space-y-2 max-w-xs mx-auto">
+        {songs.map(song => (
+          <button
+            key={song}
+            onClick={() =>
+              navigate(`/search?query=${encodeURIComponent(song)}`)
+            }
+            className="w-full bg-white/25 text-white py-2 rounded-lg text-sm backdrop-blur hover:bg-white/35 transition"
+          >
+            🎵 {song}
+          </button>
+        ))}
+      </div>
+
+      {/* Input */}
+      <div className="fixed bottom-20 left-4 right-4 flex gap-2">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Type how you feel…"
+          className="flex-1 rounded-full px-4 py-2 text-sm outline-none"
+        />
+        <button
+          onClick={handleSend}
+          className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium"
+        >
+          Send
+        </button>
+      </div>
+    </motion.div>
   );
 }

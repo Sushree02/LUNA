@@ -38,7 +38,7 @@ export type WeatherMood =
   | "dark";
 
 interface MusicStore {
-  /* PLAYER */
+  /* 🎵 PLAYER */
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
@@ -49,32 +49,32 @@ interface MusicStore {
   songVideoIds: Record<string, string>;
   setSongVideoId: (songId: string, videoId: string) => void;
 
-  /* LIBRARY */
+  /* 📚 LIBRARY */
   libraries: Library[];
   currentLibrary: Library | null;
 
-  /* SEARCH */
+  /* 🔍 SEARCH */
   searchQuery: string;
   searchResults: Song[];
 
-  /* MOODS */
+  /* 🎭 MOODS */
   moodBlocks: MoodBlock[];
   isLoading: boolean;
 
-  /* 🌤 WEATHER */
+  /* 🌤 WEATHER + TIME (USED BY HOME + LUNA) */
   weatherMood: WeatherMood;
   weatherText: string;
   timeLabel: string;
-  city: string;
+  cityName: string;
 
   setWeather: (
     mood: WeatherMood,
     weatherText: string,
     timeLabel: string,
-    city: string
+    cityName: string
   ) => void;
 
-  /* ACTIONS */
+  /* 🎧 ACTIONS */
   setCurrentSong: (song: Song, queue?: Song[], index?: number) => void;
   playNext: () => void;
   playPrevious: () => void;
@@ -140,20 +140,27 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     moodBlocks: [],
     isLoading: false,
 
-    /* 🌤 WEATHER */
+    /* 🌤 WEATHER DEFAULTS */
     weatherMood: "chill",
     weatherText: "Loading weather…",
     timeLabel: "",
-    city: "",
+    cityName: "",
 
-    setWeather: (mood, weatherText, timeLabel, city) =>
-      set({ weatherMood: mood, weatherText, timeLabel, city }),
+    /* 🌤 WEATHER SETTER (USED BY App.tsx) */
+    setWeather: (mood, weatherText, timeLabel, cityName) =>
+      set({
+        weatherMood: mood,
+        weatherText,
+        timeLabel,
+        cityName,
+      }),
 
     /* ===== PLAYER ===== */
 
     setCurrentSong: (song, queue, index) => {
       saveJSON(LAST_PLAYED_KEY, song);
       saveJSON(PLAYBACK_POSITION_KEY, 0);
+
       set({
         currentSong: song,
         queue: queue ?? [song],
@@ -166,9 +173,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     playNext: () =>
       set((state) => {
         if (state.currentIndex + 1 >= state.queue.length) return state;
+
         const nextSong = state.queue[state.currentIndex + 1];
         saveJSON(LAST_PLAYED_KEY, nextSong);
         saveJSON(PLAYBACK_POSITION_KEY, 0);
+
         return {
           currentIndex: state.currentIndex + 1,
           currentSong: nextSong,
@@ -180,9 +189,11 @@ export const useMusicStore = create<MusicStore>((set, get) => {
     playPrevious: () =>
       set((state) => {
         if (state.currentIndex - 1 < 0) return state;
+
         const prevSong = state.queue[state.currentIndex - 1];
         saveJSON(LAST_PLAYED_KEY, prevSong);
         saveJSON(PLAYBACK_POSITION_KEY, 0);
+
         return {
           currentIndex: state.currentIndex - 1,
           currentSong: prevSong,
@@ -199,6 +210,8 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       set({ progress });
     },
 
+    /* ===== 🎥 YOUTUBE CACHE ===== */
+
     setSongVideoId: (songId, videoId) =>
       set((state) => {
         const updated = { ...state.songVideoIds, [songId]: videoId };
@@ -206,14 +219,19 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         return { songVideoIds: updated };
       }),
 
+    /* ===== ❤️ LIKES ===== */
+
     toggleLike: (song) =>
       set((state) => {
         const favLib = state.libraries[0];
         const isLiked = favLib.songs.some((s) => s.id === song.id);
+
         const updatedSongs = isLiked
           ? favLib.songs.filter((s) => s.id !== song.id)
           : [...favLib.songs, normalizeSong(song)];
+
         saveJSON(FAVORITES_KEY, updatedSongs);
+
         return {
           libraries: [{ ...favLib, songs: updatedSongs }],
           currentSong:
@@ -223,11 +241,14 @@ export const useMusicStore = create<MusicStore>((set, get) => {
         };
       }),
 
+    /* ===== SEARCH ===== */
+
     setSearchQuery: (query) => set({ searchQuery: query }),
 
     performSearch: async () => {
       const query = get().searchQuery.trim();
       if (!query) return set({ searchResults: [] });
+
       try {
         const songs = await searchSpotify(query);
         set({ searchResults: songs });
@@ -236,10 +257,14 @@ export const useMusicStore = create<MusicStore>((set, get) => {
       }
     },
 
+    /* ===== MOOD BLOCKS ===== */
+
     loadMoodBlocks: async () => {
       try {
         set({ isLoading: true });
+
         const moods = ["chill", "happy", "sad", "focus"];
+
         const moodBlocks = await Promise.all(
           moods.map(async (mood) => {
             const res = await fetch(
@@ -249,6 +274,7 @@ export const useMusicStore = create<MusicStore>((set, get) => {
             return { mood, title: mood.toUpperCase(), songs };
           })
         );
+
         set({ moodBlocks, isLoading: false });
       } catch {
         set({ moodBlocks: [], isLoading: false });
