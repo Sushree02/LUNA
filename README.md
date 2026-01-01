@@ -1,6 +1,6 @@
 🎵 **LUNA — Weather-Aware, Mood-Driven Music Player**
 
-> *A modern music experience that blends mood, weather, and real-time playback.*
+> _A modern music experience that blends mood, weather, and real-time playback._
 
 **LUNA** is a **feature-rich, frontend-focused music web application** designed to deliver an immersive and intelligent listening experience.
 It combines a **polished UI**, **real music metadata**, **actual audio playback**, and **weather-based mood suggestions** to go beyond a basic music player.
@@ -13,58 +13,61 @@ This project focuses heavily on **user experience, state management, and real-wo
 
 LUNA is not just about playing songs — it’s about **context-aware music discovery**.
 
-* 🎭 Mood-driven UI
-* 🌦 Weather-aware suggestions
-* 🎧 Real music playback
-* 💎 Smooth, modern interface
+- 🎭 Mood-driven UI
+- 🌦 Weather-aware suggestions
+- 🎧 Real music playback
+- 💎 Smooth, modern interface
 
 🌟 Features
 
- 🖥️ UI & User Experience
+🖥️ UI & User Experience
 
-* 🎨 **Polished, modern UI**
-* 🏠 Home Screen with:
+- 🎨 **Polished, modern UI**
+- 🏠 Home Screen with:
 
-  * Mood blocks
-  * Weather bar
-  * Song suggestions
-* 🔍 Dedicated **Search Screen**
-* ❤️ **Liked Songs Library**
-* 💬 **Mood Chat Bar**
+  - Mood blocks
+  - Weather bar
+  - Song suggestions
 
-  * Suggests songs based on user mood
-  * Cute, dynamic UI
-  * Visuals adapt according to selected mood
-* 📱 Fully responsive design
-* ✨ Smooth animations & transitions
+- 🔍 Dedicated **Search Screen**
+- ❤️ **Liked Songs Library**
+- 💬 **Mood Chat Bar**
+
+  - Suggests songs based on user mood
+  - Cute, dynamic UI
+  - Visuals adapt according to selected mood
+
+- 📱 Fully responsive design
+- ✨ Smooth animations & transitions
 
 ---
 
 🎭 Mood-Based Music System
 
-* 🎼 Predefined **mood blocks** (Energetic, Happy, Relax, Chill, etc.)
-* 🎯 Mood controls song discovery
-* 🧠 Mood can be:
+- 🎼 Predefined **mood blocks** (Energetic, Happy, Relax, Chill, etc.)
+- 🎯 Mood controls song discovery
+- 🧠 Mood can be:
 
-  * Selected manually
-  * Suggested by weather
-  * Influenced via chat input
+  - Selected manually
+  - Suggested by weather
+  - Influenced via chat input
 
 ---
 
 🌦 Weather-Based Mood Suggestions
 
-* 🌍 **Live weather data using OpenWeather API**
-* ☁️ Weather bar displayed on Home Screen
-* 🔄 Weather conditions automatically suggest:
+- 🌍 **Live weather data using OpenWeather API**
+- ☁️ Weather bar displayed on Home Screen
+- 🔄 Weather conditions automatically suggest:
 
-  * Appropriate mood block
-  * Matching songs
-* 🌤 Example:
+  - Appropriate mood block
+  - Matching songs
 
-  * Rain → Relax / Chill
-  * Clear → Energetic / Happy
-  * Clouds → Calm / Focus
+- 🌤 Example:
+
+  - Rain → Relax / Chill
+  - Clear → Energetic / Happy
+  - Clouds → Calm / Focus
 
 This makes the app **context-aware**, not static.
 
@@ -72,57 +75,60 @@ This makes the app **context-aware**, not static.
 
 🎧 Real Music & Playback
 
-* 🎵 **Real song metadata from Spotify API**
+- 🎵 **Real song metadata from Spotify API**
 
-  * Song title
-  * Artist
-  * Album artwork
-* ▶️ **Actual music playback using YouTube IFrame & YouTube API**
-* ⏭ Next / ⏮ Previous song support
-* 🔁 Auto-play enabled
-* ⏱ **Real-time timestamp**
-* 📊 **Drawable progress bar synced with audio**
-* 🎚 Smooth playback experience across screens
+  - Song title
+  - Artist
+  - Album artwork
+
+- ▶️ **Actual music playback using YouTube IFrame & YouTube API**
+- ⏭ Next / ⏮ Previous song support
+- 🔁 Auto-play enabled
+- ⏱ **Real-time timestamp**
+- 📊 **Drawable progress bar synced with audio**
+- 🎚 Smooth playback experience across screens
 
 > ⚠️ Playback is not simulated — it uses real media sources.
 
 ---
 
- 💾 State & Data Handling
+💾 State & Data Handling
 
-* ⚡ Centralized global state
-* 🔄 Smooth data flow between:
+- ⚡ Centralized global state
+- 🔄 Smooth data flow between:
 
-  * Home
-  * Search
-  * Player
-  * Library
-* ❤️ Liked songs stored persistently
-* 🎧 Playback state maintained during navigation
+  - Home
+  - Search
+  - Player
+  - Library
+
+- ❤️ Liked songs stored persistently
+- 🎧 Playback state maintained during navigation
 
 ---
 
- 🛠️ Tech Stack
+🛠️ Tech Stack
 
 ### Frontend
 
-* **React**
-* **TypeScript**
-* **Tailwind CSS**
-* **Zustand** (state management)
-* **Framer Motion** (animations)
-* **Vite**
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **Zustand** (state management)
+- **Framer Motion** (animations)
+- **Vite**
 
 ### Backend
-* **Node.js**
-* **express.js**
+
+- **Node.js**
+- **express.js**
 
 ### APIs & Services
 
-* **Spotify API** — real music metadata
-* **YouTube IFrame & YouTube Data API** — real audio playback
-* **OpenWeather API** — live weather data
-* postman to check 
+- **Spotify API** — real music metadata
+- **YouTube IFrame & YouTube Data API** — real audio playback
+- **OpenWeather API** — live weather data
+- postman to check
 
 ---
 
@@ -153,8 +159,6 @@ Each part works together to deliver a **smooth and intelligent experience**.
 ![4](https://github.com/user-attachments/assets/35573a78-1e16-49c2-9d43-f839a8f9538d)
 ![5](https://github.com/user-attachments/assets/948c9309-b289-43e5-bbb8-dbaed1d395d0)
 ![6](https://github.com/user-attachments/assets/191c9ae9-2e86-4595-9f6e-f4eed24d7c0a)
-
-
 
 ---
 
@@ -206,14 +210,15 @@ This is **well above a basic music app**.
 
 🔮 Future Scope
 
-* AI-based mood detection
-* Personalized recommendations
-* User authentication
-* Cloud sync
-* Listening analytics
-* Voice-controlled playback
+- AI-based mood detection
+- Personalized recommendations
+- User authentication
+- Cloud sync
+- Listening analytics
+- Voice-controlled playback
 
 ---
+
 🔗 Live Demo
 
 🚀 **Deployed Application:**  
@@ -234,9 +239,7 @@ This is **well above a basic music app**.
 
 If you like this project:
 
-* ⭐ Star the repository
-* 🍴 Fork it
-* 🐛 Report issues
-* 💡 Suggest improvements
-
-
+- ⭐ Star the repository
+- 🍴 Fork it
+- 🐛 Report issues
+- 💡 Suggest improvements
