@@ -16,7 +16,7 @@ LUNA is not just about playing songs — it’s about **context-aware music disc
 - 🎭 Mood-driven UI
 - 🌦 Weather-aware suggestions
 - 🎧 Real music playback
-- 💎 Smooth, modern interface
+- 💎 Smooth, modern interface.
 
 🌟 Features
 
@@ -167,8 +167,8 @@ Each part works together to deliver a **smooth and intelligent experience**.
 Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/luna-music-player.git
-cd luna-music-player
+git clone https://github.com/Sushree02/luna-music.git
+cd luna-music
 ```
 
 Install Dependencies
@@ -222,7 +222,7 @@ This is **well above a basic music app**.
 🔗 Live Demo
 
 🚀 **Deployed Application:**  
-👉 https://luna-two-gamma.vercel.app/library
+👉 https://luna-two-gamma.vercel.app/
 👉 https://luna-frontend-hvrf.onrender.com
 
 ---
