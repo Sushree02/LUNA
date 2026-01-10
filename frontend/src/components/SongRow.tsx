@@ -16,9 +16,7 @@ export function SongRow({ song, onSelect, onLikeToggle }: SongRowProps) {
     song.artists?.map((a) => a.name).join(", ") ??
     "Unknown artist";
 
-  const cover =
-    song.cover ??
-    song.albumData?.images?.[0]?.url;
+  const cover = song.cover ?? song.albumData?.images?.[0]?.url;
 
   /* 🔥 Swipe motion */
   const x = useMotionValue(0);
@@ -36,13 +34,8 @@ export function SongRow({ song, onSelect, onLikeToggle }: SongRowProps) {
 
   /* 🧠 Swipe logic */
   const handleDragEnd = (_: any, info: any) => {
-    if (info.offset.x > 70) {
-      onLikeToggle(song);
-    }
-
-    if (info.offset.x < -70 && !song.isLiked) {
-      onLikeToggle(song);
-    }
+    if (info.offset.x > 70) onLikeToggle(song);
+    if (info.offset.x < -70 && !song.isLiked) onLikeToggle(song);
   };
 
   return (
@@ -52,32 +45,32 @@ export function SongRow({ song, onSelect, onLikeToggle }: SongRowProps) {
       dragElastic={0.25}
       style={{ x, backgroundColor: bgColor }}
       onDragEnd={handleDragEnd}
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => onSelect(song)}
       className="
         flex items-center gap-3
-        px-4 py-3        /* ⬅️ ROW MADE BIGGER HERE */
+        px-3 py-2
         w-full
-        rounded-2xl
+        rounded-xl
         glass-card
         cursor-pointer
         overflow-hidden
       "
     >
       {/* 🎵 Album */}
-      <Avatar className="w-11 h-11 rounded-xl flex-shrink-0">
+      <Avatar className="w-10 h-10 rounded-lg flex-shrink-0">
         <AvatarImage src={cover} alt={title} />
-        <AvatarFallback className="bg-indigo-velvet rounded-xl">
-          <Music size={16} className="text-periwinkle" />
+        <AvatarFallback className="bg-indigo-velvet rounded-lg">
+          <Music size={14} className="text-periwinkle" />
         </AvatarFallback>
       </Avatar>
 
       {/* 🎶 Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-periwinkle font-medium truncate text-sm">
+        <h3 className="text-periwinkle font-medium truncate text-sm leading-tight">
           {title}
         </h3>
-        <p className="text-lavender truncate text-xs">
+        <p className="text-lavender truncate text-xs leading-tight">
           {artist}
         </p>
       </div>
@@ -91,7 +84,7 @@ export function SongRow({ song, onSelect, onLikeToggle }: SongRowProps) {
         className="flex-shrink-0 p-1"
       >
         <Heart
-          size={18}
+          size={16}
           className={
             song.isLiked
               ? "text-soft-pink fill-soft-pink"
