@@ -2,6 +2,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, Music } from "lucide-react";
 import type { Song } from "@/types";
 import { motion, useMotionValue, useTransform } from "framer-motion";
+import { useMusicStore } from "@/store/useMusicStore";
 
 interface SongRowProps {
   song: Song;
@@ -16,82 +17,122 @@ export function SongRow({ song, onSelect, onLikeToggle }: SongRowProps) {
     song.artists?.map((a) => a.name).join(", ") ??
     "Unknown artist";
 
-  const cover = song.cover ?? song.albumData?.images?.[0]?.url;
+  const cover =
+    song.cover ?? song.albumData?.images?.[0]?.url;
+
+  /* 🔥 Store state */
+  const { currentSong, isPlaying } = useMusicStore();
+
+  /* 🎯 Is this song playing? */
+  const isCurrentPlaying =
+    isPlaying && currentSong?.id === song.id;
 
   /* 🔥 Swipe motion */
   const x = useMotionValue(0);
 
-  /* 🎨 Background feedback */
+  /* 🎨 Swipe background feedback */
   const bgColor = useTransform(
     x,
-    [-100, 0, 100],
+    [-80, 0, 80],
     [
-      "rgba(79,70,229,0.25)",
-      "rgba(255,255,255,0)",
-      "rgba(236,72,153,0.25)",
+      "rgba(79,70,229,0.15)",
+      "rgba(0,0,0,0)",
+      "rgba(236,72,153,0.15)",
     ]
   );
 
-  /* 🧠 Swipe logic */
   const handleDragEnd = (_: any, info: any) => {
-    if (info.offset.x > 70) onLikeToggle(song);
-    if (info.offset.x < -70 && !song.isLiked) onLikeToggle(song);
+    if (info.offset.x > 70) {
+      onLikeToggle(song);
+    }
+    if (info.offset.x < -70 && !song.isLiked) {
+      onLikeToggle(song);
+    }
   };
 
   return (
     <motion.div
       drag="x"
-      dragConstraints={{ left: -100, right: 100 }}
-      dragElastic={0.25}
+      dragConstraints={{ left: -80, right: 80 }}
+      dragElastic={0.2}
       style={{ x, backgroundColor: bgColor }}
       onDragEnd={handleDragEnd}
       whileTap={{ scale: 0.98 }}
       onClick={() => onSelect(song)}
-      className="
+      className={`
+        group relative
         flex items-center gap-3
-        px-3 py-2
+        px-4 pr-6 py-2
         w-full
-        rounded-xl
-        glass-card
         cursor-pointer
-        overflow-hidden
-      "
+        border-b border-white/10
+        transition
+        ${isCurrentPlaying ? "bg-white/5" : ""}
+      `}
     >
+      {/* 🎵 Active left accent (Spotify style) */}
+      {isCurrentPlaying && (
+        <div className="absolute left-0 top-0 h-full w-[3px] bg-indigo-400 rounded-r-full" />
+      )}
+
+      {/* 🌫 Hover glow */}
+      <div
+        className="
+          absolute inset-0
+          opacity-0
+          group-hover:opacity-100
+          transition
+          bg-gradient-to-r
+          from-indigo-500/10
+          via-transparent
+          to-transparent
+          pointer-events-none
+        "
+      />
+
       {/* 🎵 Album */}
-      <Avatar className="w-10 h-10 rounded-lg flex-shrink-0">
+      <Avatar className="w-10 h-10 rounded-md flex-shrink-0">
         <AvatarImage src={cover} alt={title} />
-        <AvatarFallback className="bg-indigo-velvet rounded-lg">
+        <AvatarFallback className="bg-indigo-velvet rounded-md">
           <Music size={14} className="text-periwinkle" />
         </AvatarFallback>
       </Avatar>
 
       {/* 🎶 Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-periwinkle font-medium truncate text-sm leading-tight">
+        <p
+          className={`text-sm truncate ${
+            isCurrentPlaying
+              ? "text-indigo-300 font-semibold"
+              : "text-periwinkle"
+          }`}
+        >
           {title}
-        </h3>
-        <p className="text-lavender truncate text-xs leading-tight">
+        </p>
+        <p className="text-lavender text-xs truncate">
           {artist}
         </p>
       </div>
 
-      {/* ❤️ Like icon */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onLikeToggle(song);
-        }}
-        className="flex-shrink-0 p-1"
-      >
-        <Heart
-          size={16}
-          className={
-            song.isLiked
-              ? "text-soft-pink fill-soft-pink"
-              : "text-lavender"
-          }
-        />
-      </button>
+      {/* ❤️ Like */}
+      <div className="flex-shrink-0 z-20">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onLikeToggle(song);
+          }}
+          className="p-1 rounded-full hover:bg-white/10 transition"
+        >
+          <Heart
+            size={16}
+            className={
+              song.isLiked
+                ? "text-soft-pink fill-soft-pink"
+                : "text-lavender"
+            }
+          />
+        </button>
+      </div>
     </motion.div>
   );
 }
